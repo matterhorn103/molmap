@@ -12,20 +12,6 @@ pub enum Object {
     Charge(Charge),
 }
 
-pub enum ChargeStyle {
-    Bare,
-    Circled,
-    PartialDelta,
-    PartialNumeric,
-}
-
-pub struct Charge {
-    pub id: ObjectId,
-    pub charge: f32,
-    pub charge_style: ChargeStyle,
-    pub anchor: Anchor,
-}
-
 pub struct ObjectView<'a> {
     pub molmap: &'a MolMap,
     pub id: ObjectId,
@@ -34,4 +20,10 @@ pub struct ObjectView<'a> {
 pub struct ObjectViewMut<'a> {
     pub molmap: &'a mut MolMap,
     pub id: ObjectId,
+}
+
+pub struct Charge {
+    pub id: ObjectId,
+    pub charge: f32,
+    pub anchor: Anchor,
 }
