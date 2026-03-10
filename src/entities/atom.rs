@@ -6,14 +6,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap, ObjectId};
+use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap};
 
 #[derive(Debug)]
 pub struct Atom {
     pub id: AtomId,
     pub element: Element,
     pub isotope: Option<u16>,
-    pub annotations: Vec<ObjectId>,
+    //pub annotations: Vec<ObjectId>,
 }
 
 impl Atom {
@@ -22,7 +22,7 @@ impl Atom {
             id,
             element,
             isotope: None,
-            annotations: Vec::new(),
+            //annotations: Vec::new(),
         }
     }
 }

@@ -6,14 +6,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{BondId, FragmentId, MolMap, MoleculeId, ObjectId};
+use crate::{BondId, FragmentId, MolMap, MoleculeId};
 
 #[derive(Debug)]
 pub struct Molecule {
     pub id: MoleculeId,
     pub nodes: Vec<FragmentId>,
     pub bonds: Vec<BondId>,
-    pub annotations: Vec<ObjectId>,
+    //pub annotations: Vec<ObjectId>,
 }
 
 impl Molecule {
@@ -22,7 +22,7 @@ impl Molecule {
             id,
             nodes: nodes.to_vec(),
             bonds: bonds.to_vec(),
-            annotations: Vec::new(),
+            //annotations: Vec::new(),
         }
     }
 }

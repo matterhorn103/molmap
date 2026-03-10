@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{BondId, FragmentId, MolMap, ObjectId, PseudoatomId};
+use crate::{BondId, FragmentId, MolMap, PseudoatomId};
 
 // Something that has a "symbol" like a normal atom but represents something else
 // May have an unknown composition like R, or a known structure like Ph
@@ -14,7 +14,7 @@ use crate::{BondId, FragmentId, MolMap, ObjectId, PseudoatomId};
 pub struct Pseudoatom {
     pub id: PseudoatomId,
     pub symbol: String,
-    pub annotations: Vec<ObjectId>,
+    //pub annotations: Vec<ObjectId>,
 }
 
 impl Pseudoatom {
@@ -22,7 +22,7 @@ impl Pseudoatom {
         Self {
             id,
             symbol,
-            annotations: Vec::new(),
+            //annotations: Vec::new(),
         }
     }
 }

@@ -10,12 +10,12 @@ pub mod atom;
 pub mod bond;
 pub mod fragment;
 pub mod molecule;
-pub mod objects;
+//pub mod objects;
 pub mod pseudoatom;
 
 pub use atom::{Atom, AtomView, AtomViewMut};
 pub use bond::{Bond, BondView, BondViewMut};
 pub use fragment::{Fragment, FragmentView, FragmentViewMut};
 pub use molecule::{Molecule, MoleculeView, MoleculeViewMut};
-pub use objects::{Object, ObjectView, ObjectViewMut};
+//pub use objects::{Object, ObjectView, ObjectViewMut};
 pub use pseudoatom::{Pseudoatom, PseudoatomView, PseudoatomViewMut};

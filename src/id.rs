@@ -24,9 +24,9 @@ new_key_type! {
 new_key_type! {
     pub struct MoleculeId;
 }
-new_key_type! {
-    pub struct ObjectId;
-}
+//new_key_type! {
+//    pub struct ObjectId;
+//}
 
 // We use enums, not traits, to classify entities and narrow functionality
 
@@ -36,7 +36,7 @@ pub enum Entity {
     Bond(BondId),
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
-    Object(ObjectId),
+    //Object(ObjectId),
     Fragment(FragmentId),
     Molecule(MoleculeId),
 }
@@ -116,7 +116,7 @@ pub enum Fundamental {
     Bond(BondId),
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
-    Object(ObjectId),
+    //Object(ObjectId),
 }
 
 impl From<Fundamental> for Entity {
@@ -125,7 +125,7 @@ impl From<Fundamental> for Entity {
             Fundamental::Bond(id) => Entity::Bond(id),
             Fundamental::Atom(id) => Entity::Atom(id),
             Fundamental::Pseudoatom(id) => Entity::Pseudoatom(id),
-            Fundamental::Object(id) => Entity::Object(id),
+            //Fundamental::Object(id) => Entity::Object(id),
         }
     }
 }

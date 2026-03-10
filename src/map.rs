@@ -19,7 +19,7 @@ pub struct MolMap<Extension> {
     pub(crate) pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,
     pub(crate) fragments: SlotMap<FragmentId, Fragment>,
     pub(crate) molecules: SlotMap<MoleculeId, Molecule>,
-    pub(crate) objects: SlotMap<ObjectId, Object>,
+    //pub(crate) objects: SlotMap<ObjectId, Object>,
     pub(crate) extension: Extension,
 }
 
@@ -36,7 +36,7 @@ impl<E: Default> Default for MolMap<E> {
             pseudoatoms: SlotMap::with_capacity_and_key(500),
             fragments: SlotMap::with_capacity_and_key(1000),
             molecules: SlotMap::with_capacity_and_key(50),
-            objects: SlotMap::with_capacity_and_key(100),
+            //objects: SlotMap::with_capacity_and_key(100),
             extension: E::default(),
         }
     }
