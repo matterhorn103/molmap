@@ -13,13 +13,14 @@ use std::hash::RandomState;
 
 use crate::{bond::BondType, entities::*, id::*, Element};
 
-pub struct MolMap {
-    pub bonds: SlotMap<BondId, Bond>,
-    pub atoms: SlotMap<AtomId, Atom>,
-    pub pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,
-    pub fragments: SlotMap<FragmentId, Fragment>,
-    pub molecules: SlotMap<MoleculeId, Molecule>,
-    pub objects: SlotMap<ObjectId, Object>,
+pub struct MolMap<Extension> {
+    pub(crate) bonds: SlotMap<BondId, Bond>,
+    pub(crate) atoms: SlotMap<AtomId, Atom>,
+    pub(crate) pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,
+    pub(crate) fragments: SlotMap<FragmentId, Fragment>,
+    pub(crate) molecules: SlotMap<MoleculeId, Molecule>,
+    pub(crate) objects: SlotMap<ObjectId, Object>,
+    pub(crate) extension: Extension,
 }
 
 // Loading from file involves a lot of insertions and therefore if the initial capacity was 0
@@ -27,7 +28,7 @@ pub struct MolMap {
 // performance by pre-allocating a sensible amount of space (say enough for a well-populated scheme
 // of A4 size) for each slotmap
 
-impl Default for MolMap {
+impl<E: Default> Default for MolMap<E> {
     fn default() -> Self {
         Self {
             bonds: SlotMap::with_capacity_and_key(500),
@@ -36,11 +37,12 @@ impl Default for MolMap {
             fragments: SlotMap::with_capacity_and_key(1000),
             molecules: SlotMap::with_capacity_and_key(50),
             objects: SlotMap::with_capacity_and_key(100),
+            extension: E::default(),
         }
     }
 }
 
-impl MolMap {
+impl<E: Default> MolMap<E> {
     pub fn new() -> Self {
         Self::default()
     }

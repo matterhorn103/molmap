@@ -12,13 +12,13 @@ pub enum Object {
     Charge(Charge),
 }
 
-pub struct ObjectView<'a> {
-    pub molmap: &'a MolMap,
+pub struct ObjectView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: ObjectId,
 }
 
-pub struct ObjectViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct ObjectViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: ObjectId,
 }
 

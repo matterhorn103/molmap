@@ -38,18 +38,18 @@ impl Bond {
 }
 
 #[derive(Clone, Copy)]
-pub struct BondView<'a> {
-    pub molmap: &'a MolMap,
+pub struct BondView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: BondId,
 }
 
-impl<'a> From<BondView<'a>> for BondId {
-    fn from(view: BondView<'a>) -> Self {
+impl<'a, E> From<BondView<'a, E>> for BondId {
+    fn from(view: BondView<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> BondView<'a> {
+impl<'a, E> BondView<'a, E> {
     fn inner(&self) -> &'a Bond {
         self.molmap.bonds.get(self.id).unwrap()
     }
@@ -59,19 +59,19 @@ impl<'a> BondView<'a> {
     }
 }
 
-pub struct BondViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct BondViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: BondId,
 }
 
-impl<'a> From<BondViewMut<'a>> for BondId {
-    fn from(view: BondViewMut<'a>) -> Self {
+impl<'a, E> From<BondViewMut<'a, E>> for BondId {
+    fn from(view: BondViewMut<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> BondViewMut<'a> {
-    fn as_ref(&self) -> BondView<'_> {
+impl<'a, E> BondViewMut<'a, E> {
+    fn as_ref(&self) -> BondView<'_, E> {
         BondView {
             molmap: &*self.molmap,
             id: self.id,

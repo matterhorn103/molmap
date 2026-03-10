@@ -28,18 +28,18 @@ impl Pseudoatom {
 }
 
 #[derive(Clone, Copy)]
-pub struct PseudoatomView<'a> {
-    pub molmap: &'a MolMap,
+pub struct PseudoatomView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: PseudoatomId,
 }
 
-impl<'a> From<PseudoatomView<'a>> for PseudoatomId {
-    fn from(view: PseudoatomView<'a>) -> Self {
+impl<'a, E> From<PseudoatomView<'a, E>> for PseudoatomId {
+    fn from(view: PseudoatomView<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> PseudoatomView<'a> {
+impl<'a, E> PseudoatomView<'a, E> {
     fn inner(&self) -> &'a Pseudoatom {
         self.molmap.pseudoatoms.get(self.id).unwrap()
     }
@@ -49,19 +49,19 @@ impl<'a> PseudoatomView<'a> {
     }
 }
 
-pub struct PseudoatomViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct PseudoatomViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: PseudoatomId,
 }
 
-impl<'a> From<PseudoatomViewMut<'a>> for PseudoatomId {
-    fn from(view: PseudoatomViewMut<'a>) -> Self {
+impl<'a, E> From<PseudoatomViewMut<'a, E>> for PseudoatomId {
+    fn from(view: PseudoatomViewMut<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> PseudoatomViewMut<'a> {
-    fn as_ref(&self) -> PseudoatomView<'_> {
+impl<'a, E> PseudoatomViewMut<'a, E> {
+    fn as_ref(&self) -> PseudoatomView<'_, E> {
         PseudoatomView {
             molmap: &*self.molmap,
             id: self.id,

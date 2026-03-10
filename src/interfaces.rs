@@ -9,9 +9,13 @@
 use crate::MolMap;
 
 pub trait FormatParser {
-    fn to_molmap(input: String) -> MolMap;
+    type E;
+
+    fn to_molmap(input: String) -> MolMap<Self::E>;
 }
 
 pub trait FormatGenerator {
-    fn from_molmap(molmap: MolMap) -> String;
+    type E;
+
+    fn from_molmap(molmap: MolMap<Self::E>) -> String;
 }

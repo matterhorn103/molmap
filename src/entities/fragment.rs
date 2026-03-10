@@ -47,18 +47,18 @@ impl Fragment {
 }
 
 #[derive(Clone, Copy)]
-pub struct FragmentView<'a> {
-    pub molmap: &'a MolMap,
+pub struct FragmentView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: FragmentId,
 }
 
-impl<'a> From<FragmentView<'a>> for FragmentId {
-    fn from(view: FragmentView<'a>) -> Self {
+impl<'a, E> From<FragmentView<'a, E>> for FragmentId {
+    fn from(view: FragmentView<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> FragmentView<'a> {
+impl<'a, E> FragmentView<'a, E> {
     fn inner(&self) -> &'a Fragment {
         self.molmap.fragments.get(self.id).unwrap()
     }
@@ -68,19 +68,19 @@ impl<'a> FragmentView<'a> {
     }
 }
 
-pub struct FragmentViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct FragmentViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: FragmentId,
 }
 
-impl<'a> From<FragmentViewMut<'a>> for FragmentId {
-    fn from(view: FragmentViewMut<'a>) -> Self {
+impl<'a, E> From<FragmentViewMut<'a, E>> for FragmentId {
+    fn from(view: FragmentViewMut<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> FragmentViewMut<'a> {
-    fn as_ref(&self) -> FragmentView<'_> {
+impl<'a, E> FragmentViewMut<'a, E> {
+    fn as_ref(&self) -> FragmentView<'_, E> {
         FragmentView {
             molmap: &*self.molmap,
             id: self.id,

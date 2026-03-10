@@ -28,18 +28,18 @@ impl Atom {
 }
 
 #[derive(Clone, Copy)]
-pub struct AtomView<'a> {
-    pub molmap: &'a MolMap,
+pub struct AtomView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: AtomId,
 }
 
-impl<'a> From<AtomView<'a>> for AtomId {
-    fn from(view: AtomView<'a>) -> Self {
+impl<'a, E> From<AtomView<'a, E>> for AtomId {
+    fn from(view: AtomView<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> AtomView<'a> {
+impl<'a, E> AtomView<'a, E> {
     fn inner(&self) -> &'a Atom {
         self.molmap.atoms.get(self.id).unwrap()
     }
@@ -49,19 +49,19 @@ impl<'a> AtomView<'a> {
     }
 }
 
-pub struct AtomViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct AtomViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: AtomId,
 }
 
-impl<'a> From<AtomViewMut<'a>> for AtomId {
-    fn from(view: AtomViewMut<'a>) -> Self {
+impl<'a, E> From<AtomViewMut<'a, E>> for AtomId {
+    fn from(view: AtomViewMut<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> AtomViewMut<'a> {
-    fn as_ref(&self) -> AtomView<'_> {
+impl<'a, E> AtomViewMut<'a, E> {
+    fn as_ref(&self) -> AtomView<'_, E> {
         AtomView {
             molmap: &*self.molmap,
             id: self.id,

@@ -28,36 +28,36 @@ impl Molecule {
 }
 
 #[derive(Clone, Copy)]
-pub struct MoleculeView<'a> {
-    pub molmap: &'a MolMap,
+pub struct MoleculeView<'a, E> {
+    pub molmap: &'a MolMap<E>,
     pub id: MoleculeId,
 }
 
-impl<'a> From<MoleculeView<'a>> for MoleculeId {
-    fn from(view: MoleculeView<'a>) -> Self {
+impl<'a, E> From<MoleculeView<'a, E>> for MoleculeId {
+    fn from(view: MoleculeView<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> MoleculeView<'a> {
+impl<'a, E> MoleculeView<'a, E> {
     fn inner(&self) -> &'a Molecule {
         self.molmap.molecules.get(self.id).unwrap()
     }
 }
 
-pub struct MoleculeViewMut<'a> {
-    pub molmap: &'a mut MolMap,
+pub struct MoleculeViewMut<'a, E> {
+    pub molmap: &'a mut MolMap<E>,
     pub id: MoleculeId,
 }
 
-impl<'a> From<MoleculeViewMut<'a>> for MoleculeId {
-    fn from(view: MoleculeViewMut<'a>) -> Self {
+impl<'a, E> From<MoleculeViewMut<'a, E>> for MoleculeId {
+    fn from(view: MoleculeViewMut<'a, E>) -> Self {
         view.id
     }
 }
 
-impl<'a> MoleculeViewMut<'a> {
-    fn as_ref(&self) -> MoleculeView<'_> {
+impl<'a, E> MoleculeViewMut<'a, E> {
+    fn as_ref(&self) -> MoleculeView<'_, E> {
         MoleculeView {
             molmap: &*self.molmap,
             id: self.id,
