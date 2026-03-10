@@ -26,16 +26,16 @@ pub enum FragmentBondingCentre {
 // Atoms and Pseudoatoms cannot exist other than inside a Fragment
 // Fragments generally indicate one or more centres to which bonds can be made
 #[derive(Debug)]
-pub struct Fragment {
-    pub id: FragmentId,
-    pub centre: FragmentBondingCentre,
-    pub atoms: Vec<AtomId>,
-    pub pseudoatoms: Vec<PseudoatomId>,
-    pub bonds: Vec<BondId>,
+pub(crate) struct Fragment {
+    pub(crate) id: FragmentId,
+    pub(crate) centre: FragmentBondingCentre,
+    pub(crate) atoms: Vec<AtomId>,
+    pub(crate) pseudoatoms: Vec<PseudoatomId>,
+    pub(crate) bonds: Vec<BondId>,
 }
 
 impl Fragment {
-    pub fn new(id: FragmentId, centre: FragmentBondingCentre) -> Self {
+    pub(crate) fn new(id: FragmentId, centre: FragmentBondingCentre) -> Self {
         Self {
             id,
             centre,

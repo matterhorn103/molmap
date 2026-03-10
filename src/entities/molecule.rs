@@ -9,18 +9,18 @@
 use crate::{BondId, FragmentId, MolMap, MoleculeId};
 
 #[derive(Debug)]
-pub struct Molecule {
-    pub id: MoleculeId,
-    pub nodes: Vec<FragmentId>,
-    pub bonds: Vec<BondId>,
+pub(crate) struct Molecule {
+    pub(crate) id: MoleculeId,
+    pub(crate) fragments: Vec<FragmentId>,
+    pub(crate) bonds: Vec<BondId>,
     //pub annotations: Vec<ObjectId>,
 }
 
 impl Molecule {
-    pub fn new(id: MoleculeId, nodes: &[FragmentId], bonds: &[BondId]) -> Self {
+    pub(crate) fn new(id: MoleculeId, fragments: &[FragmentId], bonds: &[BondId]) -> Self {
         Self {
             id,
-            nodes: nodes.to_vec(),
+            fragments: fragments.to_vec(),
             bonds: bonds.to_vec(),
             //annotations: Vec::new(),
         }

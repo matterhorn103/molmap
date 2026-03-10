@@ -11,14 +11,14 @@ use crate::{BondId, FragmentId, MolMap, PseudoatomId};
 // Something that has a "symbol" like a normal atom but represents something else
 // May have an unknown composition like R, or a known structure like Ph
 #[derive(Debug)]
-pub struct Pseudoatom {
-    pub id: PseudoatomId,
-    pub symbol: String,
+pub(crate) struct Pseudoatom {
+    pub(crate) id: PseudoatomId,
+    pub(crate) symbol: String,
     //pub annotations: Vec<ObjectId>,
 }
 
 impl Pseudoatom {
-    pub fn new(id: PseudoatomId, symbol: String) -> Self {
+    pub(crate) fn new(id: PseudoatomId, symbol: String) -> Self {
         Self {
             id,
             symbol,

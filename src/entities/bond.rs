@@ -17,14 +17,14 @@ pub enum BondType {
 }
 
 #[derive(Debug)]
-pub struct Bond {
-    pub id: BondId,
-    pub bond_type: BondType,
-    pub order: f32,
+pub(crate) struct Bond {
+    pub(crate) id: BondId,
+    pub(crate) bond_type: BondType,
+    pub(crate) order: f32,
 }
 
 impl Bond {
-    pub fn new(id: BondId, bond_type: BondType, order: f32) -> Self {
+    pub(crate) fn new(id: BondId, bond_type: BondType, order: f32) -> Self {
         Self {
             id,
             bond_type,
