@@ -24,11 +24,7 @@ pub struct Bond {
 }
 
 impl Bond {
-    pub fn new(
-        id: BondId,
-        bond_type: BondType,
-        order: f32,
-    ) -> Self {
+    pub fn new(id: BondId, bond_type: BondType, order: f32) -> Self {
         Self {
             id,
             bond_type,

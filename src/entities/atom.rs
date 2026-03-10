@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, BondId, Bondable, Element, MolMap, FragmentId, ObjectId};
+use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap, ObjectId};
 
 #[derive(Debug)]
 pub struct Atom {
@@ -43,7 +43,7 @@ impl<'a, E> AtomView<'a, E> {
     fn inner(&self) -> &'a Atom {
         self.molmap.atoms.get(self.id).unwrap()
     }
-    
+
     pub fn symbol(&self) -> &str {
         self.inner().element.symbol()
     }

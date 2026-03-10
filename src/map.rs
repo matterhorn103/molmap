@@ -11,7 +11,7 @@ use slotmap::SlotMap;
 
 use std::hash::RandomState;
 
-use crate::{bond::BondType, entities::*, id::*, Element};
+use crate::{Element, bond::BondType, entities::*, id::*};
 
 pub struct MolMap<Extension> {
     pub(crate) bonds: SlotMap<BondId, Bond>,

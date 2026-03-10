@@ -62,7 +62,7 @@ impl<'a, E> FragmentView<'a, E> {
     fn inner(&self) -> &'a Fragment {
         self.molmap.fragments.get(self.id).unwrap()
     }
-    
+
     pub fn centre(&self) -> &FragmentBondingCentre {
         &self.inner().centre
     }
