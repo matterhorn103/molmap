@@ -25,6 +25,10 @@ pub struct MolMap<Extension> {
     pub(crate) extension: Extension,
 }
 
+/// A convenient alias for `MolMap<()>`, a `MolMap` that represents just a molecular graph.
+pub type MolGraph = MolMap<()>;
+
+
 // Loading from file involves a lot of insertions and therefore if the initial capacity was 0
 // multiple expensive reallocations would occur every time the slotmaps filled up, so try to improve
 // performance by pre-allocating a sensible amount of space (say enough for a well-populated scheme
