@@ -28,29 +28,56 @@ pub struct MolMap<Extension> {
 /// A convenient alias for `MolMap<()>`, a `MolMap` that represents just a molecular graph.
 pub type MolGraph = MolMap<()>;
 
-
-// Loading from file involves a lot of insertions and therefore if the initial capacity was 0
-// multiple expensive reallocations would occur every time the slotmaps filled up, so try to improve
-// performance by pre-allocating a sensible amount of space (say enough for a well-populated scheme
-// of A4 size) for each slotmap
-
 impl<E: Default> Default for MolMap<E> {
+    /// Creates a `MolMap` with a modest capacity of approximately 5 molecules and 150 atoms.
+    /// 
+    /// Equivalent to `MolMap::with_capacity(5)`
     fn default() -> Self {
-        Self {
-            bonds: SlotMap::with_capacity_and_key(500),
-            atoms: SlotMap::with_capacity_and_key(500),
-            pseudoatoms: SlotMap::with_capacity_and_key(500),
-            fragments: SlotMap::with_capacity_and_key(1000),
-            molecules: SlotMap::with_capacity_and_key(50),
-            //objects: SlotMap::with_capacity_and_key(100),
-            extension: E::default(),
-        }
+        Self::with_capacity(5)
     }
 }
 
 impl<E: Default> MolMap<E> {
+
+    /// Creates an empty `MolMap`.
+    /// 
+    /// As the constituent `SlotMap`s are created with an initial capacity of 0, reallocations will
+    /// occur frequently if many entities are subsequently inserted.
+    /// If you have an idea of approximately how large the `MolMap` needs to be, it is recommended
+    /// to use `MolMap.with_capacity()` instead.
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            bonds: SlotMap::with_key(),
+            atoms: SlotMap::with_key(),
+            pseudoatoms: SlotMap::with_key(),
+            fragments: SlotMap::with_key(),
+            molecules: SlotMap::with_key(),
+            //objects: SlotMap::with_key(),
+            extension: E::default(),
+        }
+    }
+
+    /// Creates a `MolMap` with capacity for approximately `n` molecules and `30 * n` atoms.
+    /// 
+    /// The required number of entities of each type is guessed based on an assumption that each
+    /// molecule is a small organic molecule containing approximately 10 to 12 carbon atoms.
+    /// 
+    /// The constituent `SlotMap`s are created with initial capacities for the following:
+    /// - `n` molecules
+    /// - `10 * n` fragments
+    /// - `30 * n` atoms
+    /// - `5 * n` pseudoatoms
+    /// - `30 * n` bonds
+    pub fn with_capacity(n: usize) -> Self {
+        Self {
+            bonds: SlotMap::with_capacity_and_key(30 * n),
+            atoms: SlotMap::with_capacity_and_key(30 * n),
+            pseudoatoms: SlotMap::with_capacity_and_key(5 * n),
+            fragments: SlotMap::with_capacity_and_key(10 * n),
+            molecules: SlotMap::with_capacity_and_key(n),
+            //objects: SlotMap::with_capacity_and_key(2 * n),
+            extension: E::default(),
+        }
     }
 }
 
