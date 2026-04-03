@@ -33,15 +33,6 @@ pub trait MolMapExt: Debug + Default {
     fn with_capacity(n: usize) -> Self;
 }
 
-impl MolMapExt for () {
-    fn new() -> Self {}
-
-    fn with_capacity(n: usize) -> Self {}
-}
-
-/// A convenient alias for `MolMap<()>`, a `MolMap` that represents just a molecular graph.
-pub type MolMap0 = MolMap<()>;
-
 impl<E: MolMapExt> MolMap<E> {
     /// Creates an empty `MolMap`.
     ///
@@ -497,63 +488,6 @@ impl<E: MolMapExt> MolMap<E> {
     }
 }
 
-/// Implement the above for the basic graph version of MolMap
-impl MolMap0 {
-    /// Adds an atom to the map.
-    pub fn add_atom(&mut self, element: Element) -> AtomId {
-        self._add_atom(element)
-    }
-
-    /// Adds a pseudoatom to the map.
-    pub fn add_pseudoatom(&mut self, symbol: &str) -> PseudoatomId {
-        self._add_pseudoatom(symbol)
-    }
-
-    /// Creates a new (single covalent) bond between two bondable entities.
-    ///
-    /// Fails if either of `start` and `end` are invalid.
-    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
-        self._add_bond(start, end)
-    }
-
-    /// Adds a fragment to the map with a single initial atom.
-    ///
-    /// Fails if `centre` is invalid.
-    pub fn add_fragment(&mut self, centre: Atomlike) -> Result<FragmentId, IdError> {
-        self._add_fragment(centre)
-    }
-
-    /// Adds an empty molecule to the map.
-    pub fn add_molecule(&mut self) -> MoleculeId {
-        self._add_molecule()
-    }
-
-    /// Removes an atom from the map.
-    pub fn remove_atom(&mut self, id: AtomId) {
-        self._remove_atom(id);
-    }
-
-    /// Removes a pseudoatom from the map.
-    pub fn remove_pseudoatom(&mut self, id: PseudoatomId) {
-        self._remove_pseudoatom(id);
-    }
-
-    /// Removes a bond from the map.
-    pub fn remove_bond(&mut self, id: BondId) {
-        self._remove_bond(id);
-    }
-
-    /// Removes a fragment from the map.
-    pub fn remove_fragment(&mut self, id: FragmentId) {
-        self._remove_fragment(id);
-    }
-
-    /// Removes a molecule from the map.
-    pub fn remove_molecule(&mut self, id: MoleculeId) {
-        self._remove_molecule(id);
-    }
-}
-
 // Private methods
 impl<E: MolMapExt> MolMap<E> {
     /// Gets the actual bonding partner that a `Bondable` refers to, while also validating the ID.
@@ -611,11 +545,101 @@ impl<E: MolMapExt> MolMap<E> {
     }
 }
 
+impl MolMapExt for () {
+    fn new() -> Self {}
+
+    fn with_capacity(n: usize) -> Self {}
+}
+
+/// A convenient alias for `MolMap<()>`, a `MolMap` that represents just a molecular graph.
+pub type MolMap0 = MolMap<()>;
+
+// Implement the addition/removal methods for the basic graph version of MolMap
+impl MolMap0 {
+    /// Adds an atom to the map.
+    pub fn add_atom(&mut self, element: Element) -> AtomId {
+        self._add_atom(element)
+    }
+
+    /// Adds a pseudoatom to the map.
+    pub fn add_pseudoatom(&mut self, symbol: &str) -> PseudoatomId {
+        self._add_pseudoatom(symbol)
+    }
+
+    /// Creates a new (single covalent) bond between two bondable entities.
+    ///
+    /// Fails if either of `start` and `end` are invalid.
+    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
+        self._add_bond(start, end)
+    }
+
+    /// Adds a fragment to the map with a single initial atom.
+    ///
+    /// Fails if `centre` is invalid.
+    pub fn add_fragment(&mut self, centre: Atomlike) -> Result<FragmentId, IdError> {
+        self._add_fragment(centre)
+    }
+
+    /// Adds an empty molecule to the map.
+    pub fn add_molecule(&mut self) -> MoleculeId {
+        self._add_molecule()
+    }
+
+    /// Removes an atom from the map.
+    pub fn remove_atom(&mut self, id: AtomId) {
+        self._remove_atom(id);
+    }
+
+    /// Removes a pseudoatom from the map.
+    pub fn remove_pseudoatom(&mut self, id: PseudoatomId) {
+        self._remove_pseudoatom(id);
+    }
+
+    /// Removes a bond from the map.
+    pub fn remove_bond(&mut self, id: BondId) {
+        self._remove_bond(id);
+    }
+
+    /// Removes a fragment from the map.
+    pub fn remove_fragment(&mut self, id: FragmentId) {
+        self._remove_fragment(id);
+    }
+
+    /// Removes a molecule from the map.
+    pub fn remove_molecule(&mut self, id: MoleculeId) {
+        self._remove_molecule(id);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Element;
 
     use super::*;
+
+    /// Creates a basic map to use as the basis for various tests.
+    /// 
+    /// The map contains:
+    /// - one molecule (CH3OH)
+    /// - two fragments (CH3, OH) (n.b. not yet implemented)
+    /// - six atoms
+    /// - five bonds
+    fn meoh_map() -> MolMap0 {
+        let mut mm = MolMap0::new();
+        let h1 = mm.add_atom(Element::H);
+        let h2 = mm.add_atom(Element::H);
+        let h3 = mm.add_atom(Element::H);
+        let c1 = mm.add_atom(Element::C);
+        let c1h1 = mm.add_bond(c1.into(), h1.into()).unwrap();
+        let c1h2 = mm.add_bond(c1.into(), h2.into()).unwrap();
+        let c1h3 = mm.add_bond(c1.into(), h3.into()).unwrap();
+        let o1 = mm.add_atom(Element::O);
+        let h4 = mm.add_atom(Element::H);
+        let o1h4 = mm.add_bond(o1.into(), h4.into()).unwrap();
+        let c1o1 = mm.add_bond(c1.into(), o1.into()).unwrap();
+        // TODO fragments
+        mm
+    }
 
     #[test]
     fn add_atom() {
@@ -666,12 +690,31 @@ mod tests {
     #[test]
     fn add_bond_between_atoms() {
         let mut mm = MolMap0::new();
+        assert!(mm.bonds.is_empty());
         let h1 = mm.add_atom(Element::H);
         let h2 = mm.add_atom(Element::H);
         let b1 = mm.add_bond(h1.into(), h2.into()).unwrap();
+        assert!(mm.bonds.contains_key(b1));
         assert!(mm.atoms.get(h1).unwrap().bonds.contains(&b1));
         assert!(mm.atoms.get(h2).unwrap().bonds.contains(&b1));
-        assert!(mm.bonds.get(b1).unwrap().start == h1.into());
-        assert!(mm.bonds.get(b1).unwrap().end == h2.into());
+        assert_eq!(mm.bonds.get(b1).unwrap().start, h1.into());
+        assert_eq!(mm.bonds.get(b1).unwrap().end, h2.into());
+    }
+
+    #[test]
+    fn remove_bond_between_atoms() {
+        let mut mm = MolMap0::new();
+        let h1 = mm.add_atom(Element::H);
+        let h2 = mm.add_atom(Element::H);
+        let b1 = mm.add_bond(h1.into(), h2.into()).unwrap();
+        assert!(mm.bonds.contains_key(b1));
+        assert!(mm.atoms.get(h1).unwrap().bonds.contains(&b1));
+        assert!(mm.atoms.get(h2).unwrap().bonds.contains(&b1));
+        assert_eq!(mm.bonds.get(b1).unwrap().start, h1.into());
+        assert_eq!(mm.bonds.get(b1).unwrap().end, h2.into());
+        mm.remove_bond(b1);
+        assert!(!mm.bonds.contains_key(b1));
+        assert!(!mm.atoms.get(h1).unwrap().bonds.contains(&b1));
+        assert!(!mm.atoms.get(h2).unwrap().bonds.contains(&b1));
     }
 }
