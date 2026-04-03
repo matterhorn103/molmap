@@ -6,13 +6,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap, element::MassNumber};
+use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap};
 
 #[derive(Debug)]
 pub(crate) struct Atom {
     pub(crate) id: AtomId,
     pub(crate) element: Element,
-    pub(crate) isotope: Option<MassNumber>,
     pub(crate) bonds: Vec<BondId>,
     //pub annotations: Vec<ObjectId>,
 }
@@ -22,7 +21,6 @@ impl Atom {
         Self {
             id,
             element,
-            isotope: None,
             bonds: Vec::new(),
             //annotations: Vec::new(),
         }
@@ -52,10 +50,6 @@ impl<'a, E> AtomView<'a, E> {
 
     pub fn symbol(&self) -> &str {
         self.inner().element.symbol()
-    }
-
-    pub fn isotope(&self) -> Option<MassNumber> {
-        self.inner().isotope
     }
 
     pub fn bonds(&self) -> &[BondId] {

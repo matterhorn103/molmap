@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::hash::RandomState;
 
-use crate::{Element, bond::BondType, element::MassNumber, entities::*, id::*};
+use crate::{Element, bond::BondType, entities::*, id::*};
 
 /// An extensible arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
