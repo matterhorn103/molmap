@@ -279,7 +279,7 @@ impl<E: MolMapExt> MolMap<E> {
     /// Creates a new (single covalent) `Bond` between two bondable entities.
     ///
     /// Fails if either of `start` and `end` are invalid.
-    pub fn create_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
+    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
         // Converting the bondables into `BondingPartner`s checks the IDs at the same time
         let start = self.convert_bondable(start)?;
         let end = self.convert_bondable(end)?;
@@ -373,13 +373,59 @@ mod tests {
     use crate::Element;
     
     use super::*;
+
+    #[test]
+    fn add_atom() {
+        let mut mm = MolMap0::new();
+        assert!(mm.atoms.is_empty());
+        let h1 = mm.add_atom(Element::H);
+        assert_eq!(mm.atoms.len(), 1);
+        let c1 = mm.add_atom(Element::C);
+        assert_eq!(mm.atoms.len(), 2);
+        // Check the atoms can be accessed by their ID, and that the elements are correct
+        assert_eq!(mm.atoms.get(h1).unwrap().element, Element::H);
+        assert_eq!(mm.atoms.get(c1).unwrap().element, Element::C);
+        // Check that the bond arrays are created empty
+        assert!(mm.atoms.get(h1).unwrap().bonds.is_empty());
+    }
+
+    #[test]
+    fn add_pseudoatom() {
+        let mut mm = MolMap0::new();
+        assert!(mm.pseudoatoms.is_empty());
+        let r1 = mm.add_pseudoatom("R");
+        assert_eq!(mm.pseudoatoms.len(), 1);
+        // Check the pseudoatom can be accessed by its ID, and that the symbol is correct
+        assert_eq!(mm.pseudoatoms.get(r1).unwrap().symbol, "R");
+        // Check that the bond arrays are created empty
+        assert!(mm.pseudoatoms.get(r1).unwrap().bonds.is_empty());
+    }
+
+    #[test]
+    fn remove_atom() {
+        let mut mm = MolMap0::new();
+        let h1 = mm.add_atom(Element::H);
+        let c1 = mm.add_atom(Element::C);
+        assert_eq!(mm.atoms.len(), 2);
+        mm.remove_atom(h1);
+        assert_eq!(mm.atoms.len(), 1);
+    }
+
+    #[test]
+    fn remove_pseudoatom() {
+        let mut mm = MolMap0::new();
+        let r1 = mm.add_pseudoatom("R");
+        assert_eq!(mm.pseudoatoms.len(), 1);
+        mm.remove_pseudoatom(r1);
+        assert!(mm.pseudoatoms.is_empty());
+    }
     
     #[test]
-    fn create_bond_between_atoms() {
-        let mut mm = MolMap::<()>::new();
+    fn add_bond_between_atoms() {
+        let mut mm = MolMap0::new();
         let h1 = mm.add_atom(Element::H);
         let h2 = mm.add_atom(Element::H);
-        let b1 = mm.create_bond(h1.into(), h2.into()).unwrap();
+        let b1 = mm.add_bond(h1.into(), h2.into()).unwrap();
         assert!(mm.atoms.get(h1).unwrap().bonds.contains(&b1));
         assert!(mm.atoms.get(h2).unwrap().bonds.contains(&b1));
         assert!(mm.bonds.get(b1).unwrap().start == h1.into());
