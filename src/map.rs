@@ -44,7 +44,7 @@ pub type MolMap0 = MolMap<()>;
 
 impl<E: MolMapExt> MolMap<E> {
     /// Creates an empty `MolMap`.
-    /// 
+    ///
     /// As the constituent `SlotMap`s are created with an initial capacity of 0, reallocations will
     /// occur frequently if many entities are subsequently inserted.
     /// If you have an idea of approximately how large the `MolMap` needs to be, it is recommended
@@ -64,10 +64,10 @@ impl<E: MolMapExt> MolMap<E> {
 
 //impl<E: MolMapExt> MolMap<E> {
 //    /// Creates a `MolMap` with capacity for approximately `n` molecules and `30 * n` atoms.
-//    /// 
+//    ///
 //    /// The required number of entities of each type is guessed based on an assumption that each
 //    /// molecule is a small organic molecule containing approximately 10 to 12 carbon atoms.
-//    /// 
+//    ///
 //    /// The constituent `SlotMap`s are created with initial capacities for the following:
 //    /// - `n` molecules
 //    /// - `10 * n` fragments
@@ -306,11 +306,9 @@ impl<E: MolMapExt> MolMap<E> {
                     .bonds
                     .push(bond_id),
                 BondingPartner::AmbiguouslyBondingFragment(id) => {
-                    let FragmentCentre::Ambiguous(bonds) = &mut self
-                        .fragments
-                        .get_mut(id)
-                        .expect("Already checked")
-                        .centre else {
+                    let FragmentCentre::Ambiguous(bonds) =
+                        &mut self.fragments.get_mut(id).expect("Already checked").centre
+                    else {
                         unreachable!("Already know it's ambiguous")
                     };
                     bonds.push(bond_id);
@@ -342,68 +340,156 @@ impl<E: MolMapExt> MolMap<E> {
 
     // Methods to remove entities from collections
 
+    /// Removes the atom, pseudoatom, or bond from the fragment.
+    ///
+    /// This in infallible – if the entity is not a member of the fragment, nothing happens.
+    pub(crate) fn _remove_from_fragment(
+        &mut self,
+        fragment: FragmentId,
+        fundamental: Fundamental,
+    ) -> Result<(), IdError> {
+        let frag = self.fragments.get_mut(fragment).ok_or(IdError)?;
+        if let Some(index) = frag.members.iter().position(|x| *x == fundamental) {
+            frag.members.swap_remove(index);
+        }
+        // If an atom or bond, potentially have to change the centres of the fragment accordingly
+        match &frag.centre {
+            FragmentCentre::Ambiguous(_) => (),
+            FragmentCentre::Single(atomlike) => {
+                if Fundamental::from(*atomlike) == fundamental {
+                    frag.centre = FragmentCentre::default()
+                }
+            }
+            FragmentCentre::Multiple(atomlikes) => {
+                if let Some(atomlike) = match fundamental {
+                    Fundamental::Bond(_) => None,
+                    Fundamental::Atom(id) => Some(id.into()),
+                    Fundamental::Pseudoatom(id) => Some(id.into()),
+                } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
+                {
+                    frag.members.swap_remove(index);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Removes the atom, pseudoatom, or bond from the molecule.
+    ///
+    /// This in infallible – if the entity is not a member of the molecule, nothing happens.
+    pub(crate) fn _remove_from_molecule(
+        &mut self,
+        molecule: MoleculeId,
+        fundamental: Fundamental,
+    ) -> Result<(), IdError> {
+        let mol = self.molecules.get_mut(molecule).ok_or(IdError)?;
+        if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
+            mol.members.swap_remove(index);
+        }
+        Ok(())
+    }
+
     // Methods to remove collections but retain their members
 
     // Methods to remove entities entirely
 
     /// Removes an atom from the map, as well as any bonds to it.
+    ///
+    /// This is infallible – if the atom is not in the map, nothing happens.
     pub(crate) fn _remove_atom(&mut self, id: AtomId) {
         if !self.contains_atom(id) {
-            return
+            return;
         }
         // Make sure we always remove bonds first
         let bonds = self.atoms.get(id).unwrap().bonds.clone();
         for bond_id in bonds {
             self._remove_bond(bond_id);
         }
+        // Remove from any collections
+        if let Some(frag_id) = self.parent_fragment(id.into()) {
+            self._remove_from_fragment(frag_id, id.into()).unwrap()
+        }
+        if let Some(mol_id) = self.parent_molecule(id.into()) {
+            self._remove_from_molecule(mol_id, id.into()).unwrap()
+        }
         // Now we can safely remove the atom itself without leaving dangling bonds
         self.atoms.remove(id);
-        todo!("Remove from any collections as well");
     }
 
     /// Removes a pseudoatom from the map, as well as any bonds to it.
+    ///
+    /// This is infallible – if the pseudoatom is not in the map, nothing happens.
     pub(crate) fn _remove_pseudoatom(&mut self, id: PseudoatomId) {
         if !self.contains_pseudoatom(id) {
-            return
+            return;
         }
         // Make sure we always remove bonds first
         let bonds = self.pseudoatoms.get(id).unwrap().bonds.clone();
         for bond_id in bonds {
             self._remove_bond(bond_id);
         }
+        // Remove from any collections
+        if let Some(frag_id) = self.parent_fragment(id.into()) {
+            self._remove_from_fragment(frag_id, id.into()).unwrap()
+        }
+        if let Some(mol_id) = self.parent_molecule(id.into()) {
+            self._remove_from_molecule(mol_id, id.into()).unwrap()
+        }
         // Now we can safely remove the pseudoatom itself without leaving dangling bonds
         self.pseudoatoms.remove(id);
-        todo!("Remove from any collections as well");
     }
 
     /// Removes a bond from the map (but not its bonding partners).
+    ///
+    /// This is infallible – if the bond is not in the map, nothing happens.
     pub(crate) fn _remove_bond(&mut self, id: BondId) {
         if let Some(bond) = self.bonds.remove(id) {
             for bonding_partner in [bond.start, bond.end] {
                 match bonding_partner {
                     BondingPartner::Atom(atom_id) => {
-                        let mut atom = self.atoms.get_mut(atom_id).expect("Bonds are always removed before their bonding partners");
-                        let pos = atom.bonds.iter().position(|x| *x == id).expect("Bond should be listed in the bonding partner's bonds until deletion");
+                        let mut atom = self
+                            .atoms
+                            .get_mut(atom_id)
+                            .expect("Bonds are always removed before their bonding partners");
+                        let pos = atom.bonds.iter().position(|x| *x == id).expect(
+                            "Bond should be listed in the bonding partner's bonds until deletion",
+                        );
                         atom.bonds.remove(pos);
-                    },
+                    }
                     BondingPartner::Pseudoatom(pseudoatom_id) => {
-                        let mut pseudoatom = self.pseudoatoms.get_mut(pseudoatom_id).expect("Bonds are always removed before their bonding partners");
-                        let pos = pseudoatom.bonds.iter().position(|x| *x == id).expect("Bond should be listed in the bonding partner's bonds until deletion");
+                        let mut pseudoatom = self
+                            .pseudoatoms
+                            .get_mut(pseudoatom_id)
+                            .expect("Bonds are always removed before their bonding partners");
+                        let pos = pseudoatom.bonds.iter().position(|x| *x == id).expect(
+                            "Bond should be listed in the bonding partner's bonds until deletion",
+                        );
                         pseudoatom.bonds.remove(pos);
-                    },
+                    }
                     BondingPartner::AmbiguouslyBondingFragment(fragment_id) => todo!(),
                 }
+            }
+            // Remove from any collections
+            if let Some(frag_id) = self.parent_fragment(id.into()) {
+                self._remove_from_fragment(frag_id, id.into()).unwrap()
+            }
+            if let Some(mol_id) = self.parent_molecule(id.into()) {
+                self._remove_from_molecule(mol_id, id.into()).unwrap()
             }
         }
     }
 
     /// Removes a fragment from the map, as well as all of its members.
+    ///
+    /// This is infallible – if the fragment is not in the map, nothing happens.
     pub(crate) fn _remove_fragment(&mut self, id: FragmentId) {
         todo!("Remove members first");
         self.fragments.remove(id);
     }
 
     /// Removes a molecule from the map, as well as all of its members.
+    ///
+    /// This is infallible – if the molecule is not in the map, nothing happens.
     pub(crate) fn _remove_molecule(&mut self, id: MoleculeId) {
         todo!("Remove members first");
         self.molecules.remove(id);
@@ -490,19 +576,44 @@ impl<E: MolMapExt> MolMap<E> {
                 let fragment = self.fragments.get(id).ok_or(IdError)?;
                 // Use the first centre if any specified, the entire fragment if not
                 match &fragment.centre {
-                    fragment::FragmentCentre::Ambiguous(_) => Ok(BondingPartner::AmbiguouslyBondingFragment(id)),
+                    fragment::FragmentCentre::Ambiguous(_) => {
+                        Ok(BondingPartner::AmbiguouslyBondingFragment(id))
+                    }
                     fragment::FragmentCentre::Single(centre) => Ok((*centre).into()),
-                    fragment::FragmentCentre::Multiple(centres) => Ok((*centres.first().expect("Will always have at least one centre")).into()),
+                    fragment::FragmentCentre::Multiple(centres) => Ok((*centres
+                        .first()
+                        .expect("Will always have at least one centre"))
+                    .into()),
                 }
             }
         }
+    }
+
+    /// Determines the fragment that contains the atom, pseudoatom, or bond, if any.
+    fn parent_fragment(&self, fundamental: Fundamental) -> Option<FragmentId> {
+        for (fragment_id, fragment) in self.fragments.iter() {
+            if fragment.members.contains(&fundamental) {
+                return Some(fragment_id);
+            }
+        }
+        None
+    }
+
+    /// Determines the molecule that contains the atom, pseudoatom, or bond, if any.
+    fn parent_molecule(&self, fundamental: Fundamental) -> Option<MoleculeId> {
+        for (mol_id, mol) in self.molecules.iter() {
+            if mol.members.contains(&fundamental) {
+                return Some(mol_id);
+            }
+        }
+        None
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::Element;
-    
+
     use super::*;
 
     #[test]
@@ -550,7 +661,7 @@ mod tests {
         mm.remove_pseudoatom(r1);
         assert!(mm.pseudoatoms.is_empty());
     }
-    
+
     #[test]
     fn add_bond_between_atoms() {
         let mut mm = MolMap0::new();
