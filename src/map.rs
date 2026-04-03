@@ -353,7 +353,7 @@ impl<E: MolMapExt> MolMap<E> {
             frag.members.swap_remove(index);
         }
         // If an atom or bond, potentially have to change the centres of the fragment accordingly
-        match &frag.centre {
+        match &mut frag.centre {
             FragmentCentre::Ambiguous(_) => (),
             FragmentCentre::Single(atomlike) => {
                 if Fundamental::from(*atomlike) == fundamental {
@@ -367,7 +367,8 @@ impl<E: MolMapExt> MolMap<E> {
                     Fundamental::Pseudoatom(id) => Some(id.into()),
                 } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
                 {
-                    frag.members.swap_remove(index);
+                    // We want to preserve order
+                    atomlikes.remove(index);
                 }
             }
         }
