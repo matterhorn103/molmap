@@ -12,7 +12,6 @@ use crate::{AtomId, BondId, Bondable, Element, FragmentId, MolMap};
 pub(crate) struct Atom {
     pub(crate) element: Element,
     pub(crate) bonds: Vec<BondId>,
-    //pub annotations: Vec<ObjectId>,
 }
 
 impl Atom {
@@ -20,7 +19,6 @@ impl Atom {
         Self {
             element,
             bonds: Vec::new(),
-            //annotations: Vec::new(),
         }
     }
 }

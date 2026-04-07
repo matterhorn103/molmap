@@ -11,14 +11,12 @@ use crate::{AtomId, BondId, FragmentId, Fundamental, MolMap, MoleculeId, Pseudoa
 #[derive(Debug)]
 pub(crate) struct Molecule {
     pub(crate) members: Vec<Fundamental>,
-    //pub annotations: Vec<ObjectId>,
 }
 
 impl Molecule {
     pub(crate) fn new() -> Self {
         Self {
             members: Vec::new(),
-            //annotations: Vec::new(),
         }
     }
 }

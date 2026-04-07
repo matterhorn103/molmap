@@ -24,9 +24,6 @@ new_key_type! {
 new_key_type! {
     pub struct MoleculeId;
 }
-//new_key_type! {
-//    pub struct ObjectId;
-//}
 
 // We use enums, not traits, to classify entities and narrow functionality
 
@@ -221,7 +218,6 @@ pub enum Entity {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
-    //Object(ObjectId),
     Fragment(FragmentId),
     Molecule(MoleculeId),
 }

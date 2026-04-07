@@ -24,7 +24,6 @@ pub(crate) struct MolGraph {
     pub(crate) bonds: SlotMap<BondId, Bond>,
     pub(crate) fragments: SlotMap<FragmentId, Fragment>,
     pub(crate) molecules: SlotMap<MoleculeId, Molecule>,
-    //pub(crate) objects: SlotMap<ObjectId, Object>,
 }
 
 impl MolGraph {
@@ -35,7 +34,6 @@ impl MolGraph {
             bonds: SlotMap::with_key(),
             fragments: SlotMap::with_key(),
             molecules: SlotMap::with_key(),
-            //objects: SlotMap::with_key(),
         }
     }
     

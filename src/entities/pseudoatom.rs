@@ -14,7 +14,6 @@ use crate::{BondId, FragmentId, MolMap, PseudoatomId};
 pub(crate) struct Pseudoatom {
     pub(crate) symbol: String,
     pub(crate) bonds: Vec<BondId>,
-    //pub annotations: Vec<ObjectId>,
 }
 
 impl Pseudoatom {
@@ -22,7 +21,6 @@ impl Pseudoatom {
         Self {
             symbol,
             bonds: Vec::new(),
-            //annotations: Vec::new(),
         }
     }
 }
