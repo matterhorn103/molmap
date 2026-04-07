@@ -8,16 +8,18 @@
 
 #![allow(unused)]
 
-pub mod element;
-pub mod entities;
+mod element;
+mod entities;
 mod graph;
 mod molmap0;
-pub mod id;
-pub mod interfaces;
-pub mod map;
+mod id;
+mod interfaces;
+mod map;
+mod spatial;
 
 pub use element::Element;
 pub use entities::*;
-pub use molmap0::MolMap0;
 pub use id::*;
 pub use map::MolMap;
+pub use molmap0::MolMap0;
+pub use spatial::SpatialMolMap;
