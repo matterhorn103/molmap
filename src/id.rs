@@ -312,14 +312,3 @@ impl From<Anchor> for Entity {
         }
     }
 }
-
-#[derive(Debug)]
-pub struct IdError;
-
-impl std::error::Error for IdError {}
-
-impl std::fmt::Display for IdError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "The Id was not found in the Map")
-    }
-}

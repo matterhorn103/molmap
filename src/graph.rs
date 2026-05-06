@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMap, bond::BondType, entities::*, substituent::SubstituentCentre, id::*};
+use crate::{Element, MolMapError, MolMap, MolMapResult, bond::BondType, entities::*, id::*, substituent::SubstituentCentre};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
@@ -149,7 +149,7 @@ impl MolGraph {
     /// Creates a new (single covalent) bond between two bondable entities.
     ///
     /// Fails if either of `start` and `end` are invalid.
-    pub(crate) fn add_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
+    pub(crate) fn add_bond(&mut self, start: Bondable, end: Bondable) -> MolMapResult<BondId> {
         // Converting the bondables into `BondingPartner`s checks the IDs at the same time
         let start = self.convert_bondable(start)?;
         let end = self.convert_bondable(end)?;
@@ -186,9 +186,9 @@ impl MolGraph {
     /// Adds a substituent to the map with a single initial atom.
     ///
     /// Fails if `centre` is invalid.
-    pub(crate) fn add_substituent(&mut self, centre: Atomlike) -> Result<SubstituentId, IdError> {
+    pub(crate) fn add_substituent(&mut self, centre: Atomlike) -> MolMapResult<SubstituentId> {
         if !self.contains_atomlike(centre) {
-            return Err(IdError);
+            return Err(MolMapError::Id);
         }
         Ok(self.substituents.insert(Substituent {
             centre: SubstituentCentre::Single(centre),
@@ -214,8 +214,8 @@ impl MolGraph {
         &mut self,
         substituent: SubstituentId,
         fundamental: Fundamental,
-    ) -> Result<(), IdError> {
-        let sub = self.substituents.get_mut(substituent).ok_or(IdError)?;
+    ) -> MolMapResult<()> {
+        let sub = self.substituents.get_mut(substituent).ok_or(MolMapError::Id)?;
         if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
             sub.members.swap_remove(index);
         }
@@ -251,8 +251,8 @@ impl MolGraph {
         &mut self,
         molecule: MoleculeId,
         fundamental: Fundamental,
-    ) -> Result<(), IdError> {
-        let mol = self.molecules.get_mut(molecule).ok_or(IdError)?;
+    ) -> MolMapResult<()> {
+        let mol = self.molecules.get_mut(molecule).ok_or(MolMapError::Id)?;
         if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
             mol.members.swap_remove(index);
         }
@@ -374,19 +374,19 @@ impl MolGraph {
     /// specified centre, or they might have multiple centres.
     /// In the first case, the bond goes to the substituent as a whole; in the second case the first
     /// centre in `centres` is used for the new bond.
-    fn convert_bondable(&self, bondable: Bondable) -> Result<BondingPartner, IdError> {
+    fn convert_bondable(&self, bondable: Bondable) -> MolMapResult<BondingPartner> {
         match bondable {
             Bondable::Atom(id) => self
                 .contains_atom(id)
                 .then_some(BondingPartner::Atom(id))
-                .ok_or(IdError),
+                .ok_or(MolMapError::Id),
             Bondable::Pseudoatom(id) => self
                 .contains_pseudoatom(id)
                 .then_some(BondingPartner::Pseudoatom(id))
-                .ok_or(IdError),
+                .ok_or(MolMapError::Id),
             Bondable::Substituent(id) => {
                 // Get the substituent's data while also checking the ID
-                let substituent = self.substituents.get(id).ok_or(IdError)?;
+                let substituent = self.substituents.get(id).ok_or(MolMapError::Id)?;
                 // Use the first centre if any specified, the entire substituent if not
                 match &substituent.centre {
                     substituent::SubstituentCentre::Ambiguous(_) => {

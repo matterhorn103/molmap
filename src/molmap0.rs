@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMap, bond::BondType, graph::MolGraph, entities::*, substituent::SubstituentCentre, id::*};
+use crate::{Element, MolMap, bond::BondType, graph::MolGraph, entities::*, substituent::SubstituentCentre, id::*, MolMapResult};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a pure molecular graph,
@@ -60,14 +60,14 @@ impl MolMap0 {
     /// Creates a new (single covalent) bond between two bondable entities.
     ///
     /// Fails if either of `start` and `end` are invalid.
-    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> Result<BondId, IdError> {
+    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> MolMapResult<BondId> {
         self.core.add_bond(start, end)
     }
 
     /// Adds a substituent to the map with a single initial atom.
     ///
     /// Fails if `centre` is invalid.
-    pub fn add_substituent(&mut self, centre: Atomlike) -> Result<SubstituentId, IdError> {
+    pub fn add_substituent(&mut self, centre: Atomlike) -> MolMapResult<SubstituentId> {
         self.core.add_substituent(centre)
     }
 
@@ -89,7 +89,7 @@ impl MolMap0 {
         &mut self,
         substituent: SubstituentId,
         fundamental: Fundamental,
-    ) -> Result<(), IdError> {
+    ) -> MolMapResult<()> {
         self.core.remove_from_substituent(substituent, fundamental)
     }
 
@@ -102,7 +102,7 @@ impl MolMap0 {
         &mut self,
         molecule: MoleculeId,
         fundamental: Fundamental,
-    ) -> Result<(), IdError> {
+    ) -> MolMapResult<()> {
         self.core.remove_from_molecule(molecule, fundamental)
     }
 

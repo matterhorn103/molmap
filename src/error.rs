@@ -6,22 +6,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#![allow(unused)]
+#[derive(thiserror::Error, Debug)]
+pub enum MolMapError {
+    #[error("The Id was not found in the Map")]
+    Id,
+}
 
-mod element;
-mod entities;
-mod graph;
-mod molmap0;
-mod id;
-mod interfaces;
-mod map;
-mod spatial;
-mod error;
-
-pub use element::Element;
-pub use entities::*;
-pub use error::{MolMapError, MolMapResult};
-pub use id::*;
-pub use map::MolMap;
-pub use molmap0::MolMap0;
-pub use spatial::SpatialMolMap;
+pub type MolMapResult<T> = core::result::Result<T, MolMapError>;
