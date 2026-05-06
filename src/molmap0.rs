@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMap, bond::BondType, graph::MolGraph, entities::*, fragment::FragmentCentre, id::*};
+use crate::{Element, MolMap, bond::BondType, graph::MolGraph, entities::*, substituent::SubstituentCentre, id::*};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a pure molecular graph,
@@ -64,11 +64,11 @@ impl MolMap0 {
         self.core.add_bond(start, end)
     }
 
-    /// Adds a fragment to the map with a single initial atom.
+    /// Adds a substituent to the map with a single initial atom.
     ///
     /// Fails if `centre` is invalid.
-    pub fn add_fragment(&mut self, centre: Atomlike) -> Result<FragmentId, IdError> {
-        self.core.add_fragment(centre)
+    pub fn add_substituent(&mut self, centre: Atomlike) -> Result<SubstituentId, IdError> {
+        self.core.add_substituent(centre)
     }
 
     /// Adds an empty molecule to the map.
@@ -80,17 +80,17 @@ impl MolMap0 {
 
     // Methods to remove entities from collections
 
-    /// Removes the atom, pseudoatom, or bond from the fragment.
+    /// Removes the atom, pseudoatom, or bond from the substituent.
     ///
-    /// Fails if `fragment` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the fragment,
+    /// Fails if `substituent` is invalid.
+    /// This is otherwise infallible – if the entity is not a member of the substituent,
     /// nothing happens.
-    pub(crate) fn remove_from_fragment(
+    pub(crate) fn remove_from_substituent(
         &mut self,
-        fragment: FragmentId,
+        substituent: SubstituentId,
         fundamental: Fundamental,
     ) -> Result<(), IdError> {
-        self.core.remove_from_fragment(fragment, fundamental)
+        self.core.remove_from_substituent(substituent, fundamental)
     }
 
     /// Removes the atom, pseudoatom, or bond from the molecule.
@@ -131,11 +131,11 @@ impl MolMap0 {
         self.core.remove_bond(id);
     }
 
-    /// Removes a fragment from the map, as well as all of its members.
+    /// Removes a substituent from the map, as well as all of its members.
     ///
-    /// This is infallible – if the fragment is not in the map, nothing happens.
-    pub(crate) fn remove_fragment(&mut self, id: FragmentId) {
-        self.core.remove_fragment(id);
+    /// This is infallible – if the substituent is not in the map, nothing happens.
+    pub(crate) fn remove_substituent(&mut self, id: SubstituentId) {
+        self.core.remove_substituent(id);
     }
 
     /// Removes a molecule from the map, as well as all of its members.
@@ -156,7 +156,7 @@ mod tests {
     /// 
     /// The map contains:
     /// - one molecule (CH3OH)
-    /// - two fragments (CH3, OH) (n.b. not yet implemented)
+    /// - two substituents (CH3, OH) (n.b. not yet implemented)
     /// - six atoms
     /// - five bonds
     fn meoh_map() -> MolMap0 {
@@ -172,7 +172,7 @@ mod tests {
         let h4 = mm.add_atom(Element::H);
         let o1h4 = mm.add_bond(o1.into(), h4.into()).unwrap();
         let c1o1 = mm.add_bond(c1.into(), o1.into()).unwrap();
-        // TODO fragments
+        // TODO substituents
         mm
     }
 

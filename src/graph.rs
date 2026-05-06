@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMap, bond::BondType, entities::*, fragment::FragmentCentre, id::*};
+use crate::{Element, MolMap, bond::BondType, entities::*, substituent::SubstituentCentre, id::*};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
@@ -22,7 +22,7 @@ pub(crate) struct MolGraph {
     pub(crate) atoms: SlotMap<AtomId, Atom>,
     pub(crate) pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,
     pub(crate) bonds: SlotMap<BondId, Bond>,
-    pub(crate) fragments: SlotMap<FragmentId, Fragment>,
+    pub(crate) substituents: SlotMap<SubstituentId, Substituent>,
     pub(crate) molecules: SlotMap<MoleculeId, Molecule>,
 }
 
@@ -32,7 +32,7 @@ impl MolGraph {
             atoms: SlotMap::with_key(),
             pseudoatoms: SlotMap::with_key(),
             bonds: SlotMap::with_key(),
-            fragments: SlotMap::with_key(),
+            substituents: SlotMap::with_key(),
             molecules: SlotMap::with_key(),
         }
     }
@@ -60,9 +60,9 @@ impl MolGraph {
         self.bonds.keys()
     }
 
-    /// Returns an iterator over all the IDs of all fragments in the map.
-    pub(crate) fn fragment_ids(&'_ self) -> impl Iterator<Item = FragmentId> + '_ {
-        self.fragments.keys()
+    /// Returns an iterator over all the IDs of all substituents in the map.
+    pub(crate) fn substituent_ids(&'_ self) -> impl Iterator<Item = SubstituentId> + '_ {
+        self.substituents.keys()
     }
 
     /// Returns an iterator over all the IDs of all molecules in the map.
@@ -88,8 +88,8 @@ impl MolGraph {
     }
 
     /// Checks if the given ID is valid.
-    pub(crate) fn contains_fragment(&self, id: FragmentId) -> bool {
-        self.fragments.contains_key(id)
+    pub(crate) fn contains_substituent(&self, id: SubstituentId) -> bool {
+        self.substituents.contains_key(id)
     }
 
     /// Checks if the given ID is valid.
@@ -119,7 +119,7 @@ impl MolGraph {
         match bondable {
             Bondable::Atom(id) => self.contains_atom(id),
             Bondable::Pseudoatom(id) => self.contains_pseudoatom(id),
-            Bondable::Fragment(id) => self.contains_fragment(id),
+            Bondable::Substituent(id) => self.contains_substituent(id),
         }
     }
 
@@ -129,7 +129,7 @@ impl MolGraph {
             Entity::Atom(id) => self.contains_atom(id),
             Entity::Pseudoatom(id) => self.contains_pseudoatom(id),
             Entity::Bond(id) => self.contains_bond(id),
-            Entity::Fragment(id) => self.contains_fragment(id),
+            Entity::Substituent(id) => self.contains_substituent(id),
             Entity::Molecule(id) => self.contains_molecule(id),
         }
     }
@@ -170,9 +170,9 @@ impl MolGraph {
                     .expect("Already checked")
                     .bonds
                     .push(bond_id),
-                BondingPartner::AmbiguouslyBondingFragment(id) => {
-                    let FragmentCentre::Ambiguous(bonds) =
-                        &mut self.fragments.get_mut(id).expect("Already checked").centre
+                BondingPartner::AmbiguouslyBondingSubstituent(id) => {
+                    let SubstituentCentre::Ambiguous(bonds) =
+                        &mut self.substituents.get_mut(id).expect("Already checked").centre
                     else {
                         unreachable!("Already know it's ambiguous")
                     };
@@ -183,15 +183,15 @@ impl MolGraph {
         Ok(bond_id)
     }
 
-    /// Adds a fragment to the map with a single initial atom.
+    /// Adds a substituent to the map with a single initial atom.
     ///
     /// Fails if `centre` is invalid.
-    pub(crate) fn add_fragment(&mut self, centre: Atomlike) -> Result<FragmentId, IdError> {
+    pub(crate) fn add_substituent(&mut self, centre: Atomlike) -> Result<SubstituentId, IdError> {
         if !self.contains_atomlike(centre) {
             return Err(IdError);
         }
-        Ok(self.fragments.insert(Fragment {
-            centre: FragmentCentre::Single(centre),
+        Ok(self.substituents.insert(Substituent {
+            centre: SubstituentCentre::Single(centre),
             members: vec![centre.into()],
         }))
     }
@@ -205,29 +205,29 @@ impl MolGraph {
 
     // Methods to remove entities from collections
 
-    /// Removes the atom, pseudoatom, or bond from the fragment.
+    /// Removes the atom, pseudoatom, or bond from the substituent.
     ///
-    /// Fails if `fragment` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the fragment,
+    /// Fails if `substituent` is invalid.
+    /// This is otherwise infallible – if the entity is not a member of the substituent,
     /// nothing happens.
-    pub(crate) fn remove_from_fragment(
+    pub(crate) fn remove_from_substituent(
         &mut self,
-        fragment: FragmentId,
+        substituent: SubstituentId,
         fundamental: Fundamental,
     ) -> Result<(), IdError> {
-        let frag = self.fragments.get_mut(fragment).ok_or(IdError)?;
-        if let Some(index) = frag.members.iter().position(|x| *x == fundamental) {
-            frag.members.swap_remove(index);
+        let sub = self.substituents.get_mut(substituent).ok_or(IdError)?;
+        if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
+            sub.members.swap_remove(index);
         }
-        // If an atom or bond, potentially have to change the centres of the fragment accordingly
-        match &mut frag.centre {
-            FragmentCentre::Ambiguous(_) => (),
-            FragmentCentre::Single(atomlike) => {
+        // If an atom or bond, potentially have to change the centres of the substituent accordingly
+        match &mut sub.centre {
+            SubstituentCentre::Ambiguous(_) => (),
+            SubstituentCentre::Single(atomlike) => {
                 if Fundamental::from(*atomlike) == fundamental {
-                    frag.centre = FragmentCentre::default()
+                    sub.centre = SubstituentCentre::default()
                 }
             }
-            FragmentCentre::Multiple(atomlikes) => {
+            SubstituentCentre::Multiple(atomlikes) => {
                 if let Some(atomlike) = match fundamental {
                     Fundamental::Bond(_) => None,
                     Fundamental::Atom(id) => Some(id.into()),
@@ -276,8 +276,8 @@ impl MolGraph {
             self.remove_bond(bond_id);
         }
         // Remove from any collections
-        if let Some(frag_id) = self.parent_fragment(id.into()) {
-            self.remove_from_fragment(frag_id, id.into()).unwrap()
+        if let Some(frag_id) = self.parent_substituent(id.into()) {
+            self.remove_from_substituent(frag_id, id.into()).unwrap()
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
             self.remove_from_molecule(mol_id, id.into()).unwrap()
@@ -299,8 +299,8 @@ impl MolGraph {
             self.remove_bond(bond_id);
         }
         // Remove from any collections
-        if let Some(frag_id) = self.parent_fragment(id.into()) {
-            self.remove_from_fragment(frag_id, id.into()).unwrap()
+        if let Some(frag_id) = self.parent_substituent(id.into()) {
+            self.remove_from_substituent(frag_id, id.into()).unwrap()
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
             self.remove_from_molecule(mol_id, id.into()).unwrap()
@@ -336,12 +336,12 @@ impl MolGraph {
                         );
                         pseudoatom.bonds.remove(pos);
                     }
-                    BondingPartner::AmbiguouslyBondingFragment(fragment_id) => todo!(),
+                    BondingPartner::AmbiguouslyBondingSubstituent(substituent_id) => todo!(),
                 }
             }
             // Remove from any collections
-            if let Some(frag_id) = self.parent_fragment(id.into()) {
-                self.remove_from_fragment(frag_id, id.into()).unwrap()
+            if let Some(frag_id) = self.parent_substituent(id.into()) {
+                self.remove_from_substituent(frag_id, id.into()).unwrap()
             }
             if let Some(mol_id) = self.parent_molecule(id.into()) {
                 self.remove_from_molecule(mol_id, id.into()).unwrap()
@@ -349,12 +349,12 @@ impl MolGraph {
         }
     }
 
-    /// Removes a fragment from the map, as well as all of its members.
+    /// Removes a substituent from the map, as well as all of its members.
     ///
-    /// This is infallible – if the fragment is not in the map, nothing happens.
-    pub(crate) fn remove_fragment(&mut self, id: FragmentId) {
+    /// This is infallible – if the substituent is not in the map, nothing happens.
+    pub(crate) fn remove_substituent(&mut self, id: SubstituentId) {
         todo!("Remove members first");
-        self.fragments.remove(id);
+        self.substituents.remove(id);
     }
 
     /// Removes a molecule from the map, as well as all of its members.
@@ -370,9 +370,9 @@ impl MolGraph {
 impl MolGraph {
     /// Gets the actual bonding partner that a `Bondable` refers to, while also validating the ID.
     ///
-    /// Fragments generally form bonds from a central atom or pseudoatom, but they might have no
+    /// Substituents generally form bonds from a central atom or pseudoatom, but they might have no
     /// specified centre, or they might have multiple centres.
-    /// In the first case, the bond goes to the fragment as a whole; in the second case the first
+    /// In the first case, the bond goes to the substituent as a whole; in the second case the first
     /// centre in `centres` is used for the new bond.
     fn convert_bondable(&self, bondable: Bondable) -> Result<BondingPartner, IdError> {
         match bondable {
@@ -384,16 +384,16 @@ impl MolGraph {
                 .contains_pseudoatom(id)
                 .then_some(BondingPartner::Pseudoatom(id))
                 .ok_or(IdError),
-            Bondable::Fragment(id) => {
-                // Get the fragment's data while also checking the ID
-                let fragment = self.fragments.get(id).ok_or(IdError)?;
-                // Use the first centre if any specified, the entire fragment if not
-                match &fragment.centre {
-                    fragment::FragmentCentre::Ambiguous(_) => {
-                        Ok(BondingPartner::AmbiguouslyBondingFragment(id))
+            Bondable::Substituent(id) => {
+                // Get the substituent's data while also checking the ID
+                let substituent = self.substituents.get(id).ok_or(IdError)?;
+                // Use the first centre if any specified, the entire substituent if not
+                match &substituent.centre {
+                    substituent::SubstituentCentre::Ambiguous(_) => {
+                        Ok(BondingPartner::AmbiguouslyBondingSubstituent(id))
                     }
-                    fragment::FragmentCentre::Single(centre) => Ok((*centre).into()),
-                    fragment::FragmentCentre::Multiple(centres) => Ok((*centres
+                    substituent::SubstituentCentre::Single(centre) => Ok((*centre).into()),
+                    substituent::SubstituentCentre::Multiple(centres) => Ok((*centres
                         .first()
                         .expect("Will always have at least one centre"))
                     .into()),
@@ -402,11 +402,11 @@ impl MolGraph {
         }
     }
 
-    /// Determines the fragment that contains the atom, pseudoatom, or bond, if any.
-    fn parent_fragment(&self, fundamental: Fundamental) -> Option<FragmentId> {
-        for (fragment_id, fragment) in self.fragments.iter() {
-            if fragment.members.contains(&fundamental) {
-                return Some(fragment_id);
+    /// Determines the substituent that contains the atom, pseudoatom, or bond, if any.
+    fn parent_substituent(&self, fundamental: Fundamental) -> Option<SubstituentId> {
+        for (substituent_id, substituent) in self.substituents.iter() {
+            if substituent.members.contains(&fundamental) {
+                return Some(substituent_id);
             }
         }
         None

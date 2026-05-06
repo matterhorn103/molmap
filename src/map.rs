@@ -10,7 +10,7 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, bond::BondType, entities::*, fragment::FragmentCentre, graph::MolGraph, id::*};
+use crate::{Element, bond::BondType, entities::*, substituent::SubstituentCentre, graph::MolGraph, id::*};
 
 /// Trait implemented by all varieties of `MolMap`.
 /// 
@@ -58,9 +58,9 @@ pub trait MolMap: Debug + Default {
         self.core().bond_ids()
     }
 
-    /// Returns an iterator over all the IDs of all fragments in the map.
-    fn fragment_ids(&'_ self) -> impl Iterator<Item = FragmentId> + '_ {
-        self.core().fragment_ids()
+    /// Returns an iterator over all the IDs of all substituents in the map.
+    fn substituent_ids(&'_ self) -> impl Iterator<Item = SubstituentId> + '_ {
+        self.core().substituent_ids()
     }
 
     /// Returns an iterator over all the IDs of all molecules in the map.
@@ -84,8 +84,8 @@ pub trait MolMap: Debug + Default {
     }
 
     /// Checks if the given ID is valid.
-    fn contains_fragment(&self, id: FragmentId) -> bool {
-        self.core().contains_fragment(id)
+    fn contains_substituent(&self, id: SubstituentId) -> bool {
+        self.core().contains_substituent(id)
     }
 
     /// Checks if the given ID is valid.
@@ -166,25 +166,25 @@ pub trait MolMap: Debug + Default {
         self.bond_ids().map(|id| self.bond(id).unwrap())
     }
 
-    /// Constructs an immutable `FragmentView` for the given fragment, returning `None` if the ID is
+    /// Constructs an immutable `SubstituentView` for the given substituent, returning `None` if the ID is
     /// invalid.
-    fn fragment(&'_ self, id: FragmentId) -> Option<FragmentView<'_, Self>> {
-        self.core().fragments
+    fn substituent(&'_ self, id: SubstituentId) -> Option<SubstituentView<'_, Self>> {
+        self.core().substituents
             .contains_key(id)
-            .then_some(FragmentView { molmap: self, id })
+            .then_some(SubstituentView { molmap: self, id })
     }
 
-    /// Constructs a mutable `FragmentViewMut` for the given fragment, returning `None` if the ID is
+    /// Constructs a mutable `SubstituentViewMut` for the given substituent, returning `None` if the ID is
     /// invalid.
-    fn fragment_mut(&'_ mut self, id: FragmentId) -> Option<FragmentViewMut<'_, Self>> {
-        self.core().fragments
+    fn substituent_mut(&'_ mut self, id: SubstituentId) -> Option<SubstituentViewMut<'_, Self>> {
+        self.core().substituents
             .contains_key(id)
-            .then_some(FragmentViewMut { molmap: self, id })
+            .then_some(SubstituentViewMut { molmap: self, id })
     }
 
-    /// Returns an iterator over views of all fragments in the map.
-    fn fragments(&'_ self) -> impl Iterator<Item = FragmentView<'_, Self>> + '_ {
-        self.fragment_ids().map(|id| self.fragment(id).unwrap())
+    /// Returns an iterator over views of all substituents in the map.
+    fn substituents(&'_ self) -> impl Iterator<Item = SubstituentView<'_, Self>> + '_ {
+        self.substituent_ids().map(|id| self.substituent(id).unwrap())
     }
 
     /// Constructs an immutable `MoleculeView` for the given molecule, returning `None` if the ID is

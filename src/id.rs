@@ -19,7 +19,7 @@ new_key_type! {
     pub struct BondId;
 }
 new_key_type! {
-    pub struct FragmentId;
+    pub struct SubstituentId;
 }
 new_key_type! {
     pub struct MoleculeId;
@@ -86,13 +86,13 @@ impl From<Atomlike> for Fundamental {
 /// Aggregations of `Fundamental` entities.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Collection {
-    Fragment(FragmentId),
+    Substituent(SubstituentId),
     Molecule(MoleculeId),
 }
 
-impl From<FragmentId> for Collection {
-    fn from(id: FragmentId) -> Self {
-        Collection::Fragment(id)
+impl From<SubstituentId> for Collection {
+    fn from(id: SubstituentId) -> Self {
+        Collection::Substituent(id)
     }
 }
 
@@ -111,7 +111,7 @@ pub enum Bondable {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     //Bond(BondId),
-    Fragment(FragmentId),
+    Substituent(SubstituentId),
 }
 
 impl From<AtomId> for Bondable {
@@ -126,9 +126,9 @@ impl From<PseudoatomId> for Bondable {
     }
 }
 
-impl From<FragmentId> for Bondable {
-    fn from(id: FragmentId) -> Self {
-        Bondable::Fragment(id)
+impl From<SubstituentId> for Bondable {
+    fn from(id: SubstituentId) -> Self {
+        Bondable::Substituent(id)
     }
 }
 
@@ -147,7 +147,7 @@ pub enum BondingPartner {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     // BondingSystem(BondingSystemId),  // future
-    AmbiguouslyBondingFragment(FragmentId),
+    AmbiguouslyBondingSubstituent(SubstituentId),
 }
 
 impl From<AtomId> for BondingPartner {
@@ -161,7 +161,7 @@ impl From<PseudoatomId> for BondingPartner {
         BondingPartner::Pseudoatom(id)
     }
 }
-// Don't implement From with FragmentId - it should be checked
+// Don't implement From with SubstituentId - it should be checked
 
 impl From<Atomlike> for BondingPartner {
     fn from(atomlike: Atomlike) -> Self {
@@ -178,7 +178,7 @@ pub enum Anchor {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
-    Fragment(FragmentId),
+    Substituent(SubstituentId),
     Molecule(MoleculeId),
 }
 
@@ -200,9 +200,9 @@ impl From<BondId> for Anchor {
     }
 }
 
-impl From<FragmentId> for Anchor {
-    fn from(id: FragmentId) -> Self {
-        Anchor::Fragment(id)
+impl From<SubstituentId> for Anchor {
+    fn from(id: SubstituentId) -> Self {
+        Anchor::Substituent(id)
     }
 }
 
@@ -218,7 +218,7 @@ pub enum Entity {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
-    Fragment(FragmentId),
+    Substituent(SubstituentId),
     Molecule(MoleculeId),
 }
 
@@ -240,9 +240,9 @@ impl From<BondId> for Entity {
     }
 }
 
-impl From<FragmentId> for Entity {
-    fn from(id: FragmentId) -> Self {
-        Entity::Fragment(id)
+impl From<SubstituentId> for Entity {
+    fn from(id: SubstituentId) -> Self {
+        Entity::Substituent(id)
     }
 }
 
@@ -274,7 +274,7 @@ impl From<Fundamental> for Entity {
 impl From<Collection> for Entity {
     fn from(collection: Collection) -> Self {
         match collection {
-            Collection::Fragment(id) => Entity::Fragment(id),
+            Collection::Substituent(id) => Entity::Substituent(id),
             Collection::Molecule(id) => Entity::Molecule(id),
         }
     }
@@ -286,7 +286,7 @@ impl From<Bondable> for Entity {
             Bondable::Atom(id) => Entity::Atom(id),
             Bondable::Pseudoatom(id) => Entity::Pseudoatom(id),
             //Bondable::Bond(id) => Entity::Bond(id),
-            Bondable::Fragment(id) => Entity::Fragment(id),
+            Bondable::Substituent(id) => Entity::Substituent(id),
         }
     }
 }
@@ -296,7 +296,7 @@ impl From<BondingPartner> for Entity {
         match partner {
             BondingPartner::Atom(id) => Entity::Atom(id),
             BondingPartner::Pseudoatom(id) => Entity::Pseudoatom(id),
-            BondingPartner::AmbiguouslyBondingFragment(id) => Entity::Fragment(id),
+            BondingPartner::AmbiguouslyBondingSubstituent(id) => Entity::Substituent(id),
         }
     }
 }
@@ -307,7 +307,7 @@ impl From<Anchor> for Entity {
             Anchor::Atom(id) => Entity::Atom(id),
             Anchor::Pseudoatom(id) => Entity::Pseudoatom(id),
             Anchor::Bond(id) => Entity::Bond(id),
-            Anchor::Fragment(id) => Entity::Fragment(id),
+            Anchor::Substituent(id) => Entity::Substituent(id),
             Anchor::Molecule(id) => Entity::Molecule(id),
         }
     }

@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, BondId, FragmentId, Fundamental, MolMap, MoleculeId, PseudoatomId};
+use crate::{AtomId, BondId, SubstituentId, Fundamental, MolMap, MoleculeId, PseudoatomId};
 
 #[derive(Debug)]
 pub(crate) struct Molecule {
