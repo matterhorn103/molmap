@@ -78,6 +78,18 @@ impl MolMap0 {
 
     // Methods to add entities to collections
 
+    /// Adds the atom, pseudoatom, or bond to the substituent.
+    ///
+    /// Fails if `substituent` or `fundamental` is invalid, or if `fundamental`
+    /// is already a member of another substituent.
+    pub(crate) fn add_to_substituent(
+        &mut self,
+        substituent: SubstituentId,
+        fundamental: Fundamental,
+    ) -> MolMapResult<()> {
+        self.core.add_to_substituent(substituent, fundamental)
+    }
+
     // Methods to remove entities from collections
 
     /// Removes the atom, pseudoatom, or bond from the substituent.
@@ -251,5 +263,16 @@ mod tests {
         assert!(!mm.core.bonds.contains_key(b1));
         assert!(!mm.core.atoms.get(h1).unwrap().bonds.contains(&b1));
         assert!(!mm.core.atoms.get(h2).unwrap().bonds.contains(&b1));
+    }
+
+    #[test]
+    fn add_substituent() {
+        let mut mm = MolMap0::new();
+        let h1 = mm.add_atom(Element::H);
+        let h2 = mm.add_atom(Element::H);
+        let h3 = mm.add_atom(Element::H);
+        let h4 = mm.add_atom(Element::H);
+        let c1 = mm.add_atom(Element::C);
+        let sub = mm.add_substituent(c1.into()).unwrap();
     }
 }
