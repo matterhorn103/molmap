@@ -6,10 +6,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use crate::Entity;
+
 #[derive(thiserror::Error, Debug)]
 pub enum MolMapError {
     #[error("The Id was not found in the Map")]
-    Id,
+    Id(Entity),
 }
 
 pub type MolMapResult<T> = core::result::Result<T, MolMapError>;

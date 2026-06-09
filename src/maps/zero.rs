@@ -10,7 +10,10 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMap, bond::BondType, graph::MolGraph, entities::*, substituent::SubstituentCentre, id::*, MolMapResult};
+use crate::{
+    Element, MolMap, MolMapError, MolMapResult, bond::BondType, entities::*, graph::MolGraph,
+    id::*, substituent::SubstituentCentre,
+};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a pure molecular graph,
@@ -26,17 +29,17 @@ impl MolMap for MolMap0 {
             core: MolGraph::new(),
         }
     }
-    
+
     fn with_capacity(n: usize) -> Self {
         todo!()
     }
-    
+
     #[allow(private_interfaces)]
     #[inline]
     fn core(&self) -> &MolGraph {
         &self.core
     }
-    
+
     #[allow(private_interfaces)]
     #[inline]
     fn core_mut(&mut self) -> &mut MolGraph {
@@ -61,100 +64,27 @@ impl MolMap0 {
     ///
     /// Fails if either of `start` and `end` are invalid.
     pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> MolMapResult<BondId> {
-        self.core.add_bond(start, end)
+        if !self.core.contains_bondable(start) {
+            return Err(MolMapError::Id(start.into()));
+        } else if !self.core.contains_bondable(end) {
+            return Err(MolMapError::Id(end.into()));
+        };
+        Ok(self.core.add_bond(start, end))
     }
 
-    /// Adds a substituent to the map with a single initial atom.
+    /// Adds a substituent to the map with a single central atom.
     ///
     /// Fails if `centre` is invalid.
     pub fn add_substituent(&mut self, centre: Atomlike) -> MolMapResult<SubstituentId> {
-        self.core.add_substituent(centre)
+        if !self.core.contains_atomlike(centre) {
+            return Err(MolMapError::Id(centre.into()));
+        }
+        Ok(self.core.add_substituent_with_centre(centre))
     }
 
     /// Adds an empty molecule to the map.
     pub fn add_molecule(&mut self) -> MoleculeId {
         self.core.add_molecule()
-    }
-
-    // Methods to add entities to collections
-
-    /// Adds the atom, pseudoatom, or bond to the substituent.
-    ///
-    /// Fails if `substituent` or `fundamental` is invalid, or if `fundamental`
-    /// is already a member of another substituent.
-    pub(crate) fn add_to_substituent(
-        &mut self,
-        substituent: SubstituentId,
-        fundamental: Fundamental,
-    ) -> MolMapResult<()> {
-        self.core.add_to_substituent(substituent, fundamental)
-    }
-
-    // Methods to remove entities from collections
-
-    /// Removes the atom, pseudoatom, or bond from the substituent.
-    ///
-    /// Fails if `substituent` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the substituent,
-    /// nothing happens.
-    pub(crate) fn remove_from_substituent(
-        &mut self,
-        substituent: SubstituentId,
-        fundamental: Fundamental,
-    ) -> MolMapResult<()> {
-        self.core.remove_from_substituent(substituent, fundamental)
-    }
-
-    /// Removes the atom, pseudoatom, or bond from the molecule.
-    ///
-    /// Fails if `molecule` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the molecule,
-    /// nothing happens.
-    pub(crate) fn remove_from_molecule(
-        &mut self,
-        molecule: MoleculeId,
-        fundamental: Fundamental,
-    ) -> MolMapResult<()> {
-        self.core.remove_from_molecule(molecule, fundamental)
-    }
-
-    // Methods to remove collections but retain their members
-
-    // Methods to remove entities entirely
-
-    /// Removes an atom from the map, as well as any bonds to it.
-    ///
-    /// This is infallible – if the atom is not in the map, nothing happens.
-    pub(crate) fn remove_atom(&mut self, id: AtomId) {
-        self.core.remove_atom(id);
-    }
-
-    /// Removes a pseudoatom from the map, as well as any bonds to it.
-    ///
-    /// This is infallible – if the pseudoatom is not in the map, nothing happens.
-    pub(crate) fn remove_pseudoatom(&mut self, id: PseudoatomId) {
-        self.core.remove_pseudoatom(id);
-    }
-
-    /// Removes a bond from the map (but not its bonding partners).
-    ///
-    /// This is infallible – if the bond is not in the map, nothing happens.
-    pub(crate) fn remove_bond(&mut self, id: BondId) {
-        self.core.remove_bond(id);
-    }
-
-    /// Removes a substituent from the map, as well as all of its members.
-    ///
-    /// This is infallible – if the substituent is not in the map, nothing happens.
-    pub(crate) fn remove_substituent(&mut self, id: SubstituentId) {
-        self.core.remove_substituent(id);
-    }
-
-    /// Removes a molecule from the map, as well as all of its members.
-    ///
-    /// This is infallible – if the molecule is not in the map, nothing happens.
-    pub(crate) fn remove_molecule(&mut self, id: MoleculeId) {
-        self.core.remove_molecule(id);
     }
 }
 
@@ -165,7 +95,7 @@ mod tests {
     use super::*;
 
     /// Creates a basic map to use as the basis for various tests.
-    /// 
+    ///
     /// The map contains:
     /// - one molecule (CH3OH)
     /// - two substituents (CH3, OH) (n.b. not yet implemented)
@@ -215,24 +145,24 @@ mod tests {
         assert!(mm.core.pseudoatoms.get(r1).unwrap().bonds.is_empty());
     }
 
-    #[test]
-    fn remove_atom() {
-        let mut mm = MolMap0::new();
-        let h1 = mm.add_atom(Element::H);
-        let c1 = mm.add_atom(Element::C);
-        assert_eq!(mm.core.atoms.len(), 2);
-        mm.remove_atom(h1);
-        assert_eq!(mm.core.atoms.len(), 1);
-    }
+    //#[test]
+    //fn remove_atom() {
+    //    let mut mm = MolMap0::new();
+    //    let h1 = mm.add_atom(Element::H);
+    //    let c1 = mm.add_atom(Element::C);
+    //    assert_eq!(mm.core.atoms.len(), 2);
+    //    mm.remove_atom(h1);
+    //    assert_eq!(mm.core.atoms.len(), 1);
+    //}
 
-    #[test]
-    fn remove_pseudoatom() {
-        let mut mm = MolMap0::new();
-        let r1 = mm.add_pseudoatom("R");
-        assert_eq!(mm.core.pseudoatoms.len(), 1);
-        mm.remove_pseudoatom(r1);
-        assert!(mm.core.pseudoatoms.is_empty());
-    }
+    //#[test]
+    //fn remove_pseudoatom() {
+    //    let mut mm = MolMap0::new();
+    //    let r1 = mm.add_pseudoatom("R");
+    //    assert_eq!(mm.core.pseudoatoms.len(), 1);
+    //    mm.remove_pseudoatom(r1);
+    //    assert!(mm.core.pseudoatoms.is_empty());
+    //}
 
     #[test]
     fn add_bond_between_atoms() {
@@ -248,22 +178,22 @@ mod tests {
         assert_eq!(mm.core.bonds.get(b1).unwrap().end, h2.into());
     }
 
-    #[test]
-    fn remove_bond_between_atoms() {
-        let mut mm = MolMap0::new();
-        let h1 = mm.add_atom(Element::H);
-        let h2 = mm.add_atom(Element::H);
-        let b1 = mm.add_bond(h1.into(), h2.into()).unwrap();
-        assert!(mm.core.bonds.contains_key(b1));
-        assert!(mm.core.atoms.get(h1).unwrap().bonds.contains(&b1));
-        assert!(mm.core.atoms.get(h2).unwrap().bonds.contains(&b1));
-        assert_eq!(mm.core.bonds.get(b1).unwrap().start, h1.into());
-        assert_eq!(mm.core.bonds.get(b1).unwrap().end, h2.into());
-        mm.remove_bond(b1);
-        assert!(!mm.core.bonds.contains_key(b1));
-        assert!(!mm.core.atoms.get(h1).unwrap().bonds.contains(&b1));
-        assert!(!mm.core.atoms.get(h2).unwrap().bonds.contains(&b1));
-    }
+    //#[test]
+    //fn remove_bond_between_atoms() {
+    //    let mut mm = MolMap0::new();
+    //    let h1 = mm.add_atom(Element::H);
+    //    let h2 = mm.add_atom(Element::H);
+    //    let b1 = mm.add_bond(h1.into(), h2.into()).unwrap();
+    //    assert!(mm.core.bonds.contains_key(b1));
+    //    assert!(mm.core.atoms.get(h1).unwrap().bonds.contains(&b1));
+    //    assert!(mm.core.atoms.get(h2).unwrap().bonds.contains(&b1));
+    //    assert_eq!(mm.core.bonds.get(b1).unwrap().start, h1.into());
+    //    assert_eq!(mm.core.bonds.get(b1).unwrap().end, h2.into());
+    //    mm.remove_bond(b1);
+    //    assert!(!mm.core.bonds.contains_key(b1));
+    //    assert!(!mm.core.atoms.get(h1).unwrap().bonds.contains(&b1));
+    //    assert!(!mm.core.atoms.get(h2).unwrap().bonds.contains(&b1));
+    //}
 
     #[test]
     fn add_substituent() {

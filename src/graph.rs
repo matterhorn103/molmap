@@ -10,13 +10,21 @@ use slotmap::{SlotMap, basic::Iter};
 
 use std::{fmt::Debug, hash::RandomState};
 
-use crate::{Element, MolMapError, MolMap, MolMapResult, bond::BondType, entities::*, id::*, substituent::SubstituentCentre};
+use crate::{
+    Element, MolMap, MolMapError, MolMapResult, bond::BondType, entities::*, id::*,
+    substituent::SubstituentCentre,
+};
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
-/// 
+///
 /// This forms the core of all `MolMap` types, but is not public.
 /// [`MolMap0`] is the `MolMap` type that provides a molecular graph for users.
+///
+/// In general, the methods of `MolGraph` should be small in scope and efficient
+/// so that the higher maps can combine them to create a nice public API.
+/// The methods should also do as little checking and validation as possible, with
+/// panicking preferred - the higher maps are then responsible for careful usage.
 #[derive(Debug, Default)]
 pub(crate) struct MolGraph {
     pub(crate) atoms: SlotMap<AtomId, Atom>,
@@ -36,7 +44,7 @@ impl MolGraph {
             molecules: SlotMap::with_key(),
         }
     }
-    
+
     pub(crate) fn with_capacity(n: usize) -> Self {
         todo!()
     }
@@ -148,31 +156,24 @@ impl MolGraph {
 
     /// Creates a new (single covalent) bond between two bondable entities.
     ///
-    /// Fails if either of `start` and `end` are invalid.
-    pub(crate) fn add_bond(&mut self, start: Bondable, end: Bondable) -> MolMapResult<BondId> {
-        // Converting the bondables into `BondingPartner`s checks the IDs at the same time
-        let start = self.convert_bondable(start)?;
-        let end = self.convert_bondable(end)?;
+    /// # Panics
+    ///
+    /// Panics if either of `start` and `end` are invalid.
+    pub(crate) fn add_bond(&mut self, start: Bondable, end: Bondable) -> BondId {
+        let start = self.convert_bondable(start);
+        let end = self.convert_bondable(end);
         let bond_id = self
             .bonds
             .insert(Bond::new(BondType::Covalent, 1.0, start, end));
         for partner in [start, end] {
             match partner {
-                BondingPartner::Atom(id) => self
-                    .atoms
-                    .get_mut(id)
-                    .expect("Already checked")
-                    .bonds
-                    .push(bond_id),
-                BondingPartner::Pseudoatom(id) => self
-                    .pseudoatoms
-                    .get_mut(id)
-                    .expect("Already checked")
-                    .bonds
-                    .push(bond_id),
+                BondingPartner::Atom(id) => self.atoms.get_mut(id).unwrap().bonds.push(bond_id),
+                BondingPartner::Pseudoatom(id) => {
+                    self.pseudoatoms.get_mut(id).unwrap().bonds.push(bond_id)
+                }
                 BondingPartner::AmbiguouslyBondingSubstituent(id) => {
                     let SubstituentCentre::Ambiguous(bonds) =
-                        &mut self.substituents.get_mut(id).expect("Already checked").centre
+                        &mut self.substituents.get_mut(id).unwrap().centre
                     else {
                         unreachable!("Already know it's ambiguous")
                     };
@@ -180,20 +181,28 @@ impl MolGraph {
                 }
             }
         }
-        Ok(bond_id)
+        bond_id
     }
 
-    /// Adds a substituent to the map with a single initial atom.
+    /// Adds an empty substituent to the map.
     ///
-    /// Fails if `centre` is invalid.
-    pub(crate) fn add_substituent(&mut self, centre: Atomlike) -> MolMapResult<SubstituentId> {
-        if !self.contains_atomlike(centre) {
-            return Err(MolMapError::Id);
-        }
-        Ok(self.substituents.insert(Substituent {
+    /// The centre of the new substituent is ambiguous, so if it will have a
+    /// centre added to it subsequently, prefer `add_substituent_with_centre()`.
+    pub(crate) fn add_substituent(&mut self) -> SubstituentId {
+        self.substituents.insert(Substituent {
+            centre: SubstituentCentre::Ambiguous(Vec::new()),
+            members: Vec::new(),
+        })
+    }
+
+    /// Adds a substituent to the map with the given atomlike as its centre.
+    ///
+    /// Note that this method will not fail, even if `centre` is an invalid ID.
+    pub(crate) fn add_substituent_with_centre(&mut self, centre: Atomlike) -> SubstituentId {
+        self.substituents.insert(Substituent {
             centre: SubstituentCentre::Single(centre),
             members: vec![centre.into()],
-        }))
+        })
     }
 
     /// Adds an empty molecule to the map.
@@ -203,27 +212,73 @@ impl MolGraph {
 
     // Methods to add entities to collections
 
+    /// Adds the atom, pseudoatom, or bond to the substituent.
+    ///
+    /// This method should only ever be used with fundamentals that do not already
+    /// belong to a substituent.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `substituent` is invalid, but is unaffected if `fundamental` is
+    /// invalid.
+    pub(crate) fn add_to_substituent(
+        &mut self,
+        substituent: SubstituentId,
+        fundamental: Fundamental,
+    ) {
+        let sub = self.substituents.get_mut(substituent).unwrap();
+        sub.members.push(fundamental);
+    }
+
+    /// Adds the atom, pseudoatom, or bond to the molecule.
+    ///
+    /// This method should only ever be used with fundamentals that do not already
+    /// belong to a molecule.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `molecule` is invalid, but is unaffected if `fundamental` is
+    /// invalid.
+    pub(crate) fn add_to_molecule(&mut self, molecule: MoleculeId, fundamental: Fundamental) {
+        let mol = self.molecules.get_mut(molecule).unwrap();
+        mol.members.push(fundamental);
+    }
+
     // Methods to remove entities from collections
 
     /// Removes the atom, pseudoatom, or bond from the substituent.
     ///
-    /// Fails if `substituent` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the substituent,
-    /// nothing happens.
+    /// If the fundamental is an atomlike and is the centre of the substituent,
+    /// the centre is adjusted accordingly; if it is the lone centre, the
+    /// substituent's centre becomes ambiguous. If it is one of two centres,
+    /// however, the centre remains `SubstituentCentre::Multiple` rather than
+    /// becoming `Single`.
+    ///
+    /// The substituent continues to exist even if empty.
+    ///
+    /// If the fundamental is invalid or not a member of the substituent, this
+    /// simply has no effect.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `substituent` is invalid.
     pub(crate) fn remove_from_substituent(
         &mut self,
         substituent: SubstituentId,
         fundamental: Fundamental,
-    ) -> MolMapResult<()> {
-        let sub = self.substituents.get_mut(substituent).ok_or(MolMapError::Id)?;
+    ) {
+        let sub = self.substituents.get_mut(substituent).unwrap();
         if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
             sub.members.swap_remove(index);
         }
-        // If an atom or bond, potentially have to change the centres of the substituent accordingly
+        // If fundamental is an atomlike, we might be removing the centre of the
+        // substituent (or one of them).
+        // Is so, adjust the centres of the substituent accordingly
         match &mut sub.centre {
             SubstituentCentre::Ambiguous(_) => (),
             SubstituentCentre::Single(atomlike) => {
                 if Fundamental::from(*atomlike) == fundamental {
+                    // Becomes an ambiguous centre
                     sub.centre = SubstituentCentre::default()
                 }
             }
@@ -239,27 +294,24 @@ impl MolGraph {
                 }
             }
         }
-        Ok(())
     }
 
     /// Removes the atom, pseudoatom, or bond from the molecule.
     ///
-    /// Fails if `molecule` is invalid.
-    /// This is otherwise infallible – if the entity is not a member of the molecule,
-    /// nothing happens.
-    pub(crate) fn remove_from_molecule(
-        &mut self,
-        molecule: MoleculeId,
-        fundamental: Fundamental,
-    ) -> MolMapResult<()> {
-        let mol = self.molecules.get_mut(molecule).ok_or(MolMapError::Id)?;
+    /// If the fundamental is invalid or not a member of the molecule, this simply
+    /// has no effect.
+    ///
+    /// The molecule continues to exist even if empty.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `molecule` is invalid.
+    pub(crate) fn remove_from_molecule(&mut self, molecule: MoleculeId, fundamental: Fundamental) {
+        let mol = self.molecules.get_mut(molecule).unwrap();
         if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
             mol.members.swap_remove(index);
         }
-        Ok(())
     }
-
-    // Methods to remove collections but retain their members
 
     // Methods to remove entities entirely
 
@@ -277,10 +329,10 @@ impl MolGraph {
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
-            self.remove_from_substituent(frag_id, id.into()).unwrap()
+            self.remove_from_substituent(frag_id, id.into())
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
-            self.remove_from_molecule(mol_id, id.into()).unwrap()
+            self.remove_from_molecule(mol_id, id.into())
         }
         // Now we can safely remove the atom itself without leaving dangling bonds
         self.atoms.remove(id);
@@ -300,10 +352,10 @@ impl MolGraph {
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
-            self.remove_from_substituent(frag_id, id.into()).unwrap()
+            self.remove_from_substituent(frag_id, id.into())
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
-            self.remove_from_molecule(mol_id, id.into()).unwrap()
+            self.remove_from_molecule(mol_id, id.into())
         }
         // Now we can safely remove the pseudoatom itself without leaving dangling bonds
         self.pseudoatoms.remove(id);
@@ -311,7 +363,12 @@ impl MolGraph {
 
     /// Removes a bond from the map (but not its bonding partners).
     ///
-    /// This is infallible – if the bond is not in the map, nothing happens.
+    /// If the bond is not in the map, nothing happens.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either of the bond's bonding partners does not exist (which
+    /// should never be the case – bonds are last in, first out).
     pub(crate) fn remove_bond(&mut self, id: BondId) {
         if let Some(bond) = self.bonds.remove(id) {
             for bonding_partner in [bond.start, bond.end] {
@@ -341,10 +398,10 @@ impl MolGraph {
             }
             // Remove from any collections
             if let Some(frag_id) = self.parent_substituent(id.into()) {
-                self.remove_from_substituent(frag_id, id.into()).unwrap()
+                self.remove_from_substituent(frag_id, id.into())
             }
             if let Some(mol_id) = self.parent_molecule(id.into()) {
-                self.remove_from_molecule(mol_id, id.into()).unwrap()
+                self.remove_from_molecule(mol_id, id.into())
             }
         }
     }
@@ -353,7 +410,14 @@ impl MolGraph {
     ///
     /// This is infallible – if the substituent is not in the map, nothing happens.
     pub(crate) fn remove_substituent(&mut self, id: SubstituentId) {
-        todo!("Remove members first");
+        let members = self.substituents.get(id).unwrap().members.clone();
+        for member in members {
+            match member {
+                Fundamental::Atom(id) => self.remove_atom(id),
+                Fundamental::Pseudoatom(id) => self.remove_pseudoatom(id),
+                Fundamental::Bond(id) => self.remove_bond(id),
+            }
+        }
         self.substituents.remove(id);
     }
 
@@ -361,42 +425,47 @@ impl MolGraph {
     ///
     /// This is infallible – if the molecule is not in the map, nothing happens.
     pub(crate) fn remove_molecule(&mut self, id: MoleculeId) {
-        todo!("Remove members first");
+        let members = self.molecules.get(id).unwrap().members.clone();
+        for member in members {
+            match member {
+                Fundamental::Atom(id) => self.remove_atom(id),
+                Fundamental::Pseudoatom(id) => self.remove_pseudoatom(id),
+                Fundamental::Bond(id) => self.remove_bond(id),
+            }
+        }
         self.molecules.remove(id);
     }
-}
 
-// Private methods
-impl MolGraph {
-    /// Gets the actual bonding partner that a `Bondable` refers to, while also validating the ID.
+    /// Gets the actual bonding partner that a `Bondable` refers to.
     ///
     /// Substituents generally form bonds from a central atom or pseudoatom, but they might have no
     /// specified centre, or they might have multiple centres.
     /// In the first case, the bond goes to the substituent as a whole; in the second case the first
     /// centre in `centres` is used for the new bond.
-    fn convert_bondable(&self, bondable: Bondable) -> MolMapResult<BondingPartner> {
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bondable` is an invalid `Substituent`.
+    ///
+    /// For an `Atom` or `Pseudoatom` the ID is simply wrapped in `BondingPartner`
+    /// with no checking of validity, so it will never fail.
+    fn convert_bondable(&self, bondable: Bondable) -> BondingPartner {
         match bondable {
-            Bondable::Atom(id) => self
-                .contains_atom(id)
-                .then_some(BondingPartner::Atom(id))
-                .ok_or(MolMapError::Id),
-            Bondable::Pseudoatom(id) => self
-                .contains_pseudoatom(id)
-                .then_some(BondingPartner::Pseudoatom(id))
-                .ok_or(MolMapError::Id),
+            Bondable::Atom(id) => BondingPartner::Atom(id),
+            Bondable::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
             Bondable::Substituent(id) => {
-                // Get the substituent's data while also checking the ID
-                let substituent = self.substituents.get(id).ok_or(MolMapError::Id)?;
+                // Get the substituent's data, panics if ID invalid
+                let substituent = self.substituents.get(id).unwrap();
                 // Use the first centre if any specified, the entire substituent if not
                 match &substituent.centre {
                     substituent::SubstituentCentre::Ambiguous(_) => {
-                        Ok(BondingPartner::AmbiguouslyBondingSubstituent(id))
+                        BondingPartner::AmbiguouslyBondingSubstituent(id)
                     }
-                    substituent::SubstituentCentre::Single(centre) => Ok((*centre).into()),
-                    substituent::SubstituentCentre::Multiple(centres) => Ok((*centres
+                    substituent::SubstituentCentre::Single(centre) => (*centre).into(),
+                    substituent::SubstituentCentre::Multiple(centres) => (*centres
                         .first()
                         .expect("Will always have at least one centre"))
-                    .into()),
+                    .into(),
                 }
             }
         }
