@@ -116,6 +116,9 @@ impl<'a, M: MolMap> BondView<'a, M> {
 }
 
 /// A mutable view over a specific bond entity in a specific `MolMap`.
+///
+/// Note that the bonding partners of a bond cannot be changed; the bond must be
+/// removed and a new one added between the desired new bonding partners.
 pub struct BondViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: BondId,

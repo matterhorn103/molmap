@@ -46,6 +46,15 @@ impl<'a, M: MolMap> MoleculeView<'a, M> {
     fn core(&self) -> &'a Molecule {
         self.molmap.core().molecules.get(self.id).unwrap()
     }
+
+    pub fn members(&self) -> &[FundamentalId] {
+        &self.core().members
+    }
+
+    /// Checks if the molecule contains the given atom, pseudoatom, or bond.
+    pub fn contains(&self, fundamental: FundamentalId) -> bool {
+        self.members().contains(&fundamental)
+    }
 }
 
 /// A mutable view over a specific molecule entity in a specific `MolMap`.

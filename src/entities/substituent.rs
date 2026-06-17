@@ -18,8 +18,8 @@ new_key_type! {
     pub struct SubstituentId;
 }
 
-#[derive(Debug)]
-pub(crate) enum SubstituentCentre {
+#[derive(Debug, Clone)]
+pub enum SubstituentCentre {
     Ambiguous(Vec<BondId>),
     Single(AtomlikeId),
     Multiple(Vec<AtomlikeId>),
@@ -73,6 +73,19 @@ impl<'a, M: MolMap> From<SubstituentView<'a, M>> for SubstituentId {
 impl<'a, M: MolMap> SubstituentView<'a, M> {
     fn core(&self) -> &'a Substituent {
         self.molmap.core().substituents.get(self.id).unwrap()
+    }
+
+    pub fn centre(&self) -> &SubstituentCentre {
+        &self.core().centre
+    }
+
+    pub fn members(&self) -> &[FundamentalId] {
+        &self.core().members
+    }
+
+    /// Checks if the substituent contains the given atom, pseudoatom, or bond.
+    pub fn contains(&self, fundamental: FundamentalId) -> bool {
+        self.members().contains(&fundamental)
     }
 }
 
