@@ -43,6 +43,7 @@ impl<'a, M: MolMap> From<MoleculeView<'a, M>> for MoleculeId {
 }
 
 impl<'a, M: MolMap> MoleculeView<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&self) -> &'a Molecule {
         self.molmap.core().molecules.get(self.id).unwrap()
     }
@@ -70,7 +71,23 @@ impl<'a, M: MolMap> From<MoleculeViewMut<'a, M>> for MoleculeId {
 }
 
 impl<'a, M: MolMap> MoleculeViewMut<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&mut self) -> &mut Molecule {
         self.molmap.core_mut().molecules.get_mut(self.id).unwrap()
+    }
+
+    /// Returns an immutable view over the same molecule.
+    fn as_ref(&self) -> MoleculeView<'_, M> {
+        MoleculeView {
+            molmap: &*self.molmap,
+            id: self.id,
+        }
+    }
+
+    // Public methods, which should consume the view
+
+    /// Removes the molecule from the map, as well as all of its members.
+    pub fn remove(mut self) {
+        self.molmap.core_mut().remove_molecule(self.id);
     }
 }

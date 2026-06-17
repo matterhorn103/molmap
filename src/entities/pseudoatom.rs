@@ -49,6 +49,7 @@ impl<'a, M: MolMap> From<PseudoatomView<'a, M>> for PseudoatomId {
 }
 
 impl<'a, M: MolMap> PseudoatomView<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&self) -> &'a Pseudoatom {
         self.molmap.core().pseudoatoms.get(self.id).unwrap()
     }
@@ -75,7 +76,28 @@ impl<'a, M: MolMap> From<PseudoatomViewMut<'a, M>> for PseudoatomId {
 }
 
 impl<'a, M: MolMap> PseudoatomViewMut<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&mut self) -> &mut Pseudoatom {
         self.molmap.core_mut().pseudoatoms.get_mut(self.id).unwrap()
+    }
+
+    /// Returns an immutable view over the same pseudoatom.
+    fn as_ref(&self) -> PseudoatomView<'_, M> {
+        PseudoatomView {
+            molmap: &*self.molmap,
+            id: self.id,
+        }
+    }
+
+    // Public methods, which should consume the view
+
+    /// Set the symbol of the pseudoatom without any additional effects.
+    pub fn set_symbol(mut self, symbol: String) {
+        self.core().symbol = symbol
+    }
+
+    /// Removes the pseudoatom from the map, as well as any bonds to it.
+    pub fn remove(mut self) {
+        self.molmap.core_mut().remove_pseudoatom(self.id);
     }
 }

@@ -97,6 +97,7 @@ impl<'a, M: MolMap> From<BondView<'a, M>> for BondId {
 }
 
 impl<'a, M: MolMap> BondView<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&self) -> &'a Bond {
         self.molmap.core().bonds.get(self.id).unwrap()
     }
@@ -131,7 +132,33 @@ impl<'a, M: MolMap> From<BondViewMut<'a, M>> for BondId {
 }
 
 impl<'a, M: MolMap> BondViewMut<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&mut self) -> &mut Bond {
         self.molmap.core_mut().bonds.get_mut(self.id).unwrap()
+    }
+
+    /// Returns an immutable view over the same bond.
+    fn as_ref(&self) -> BondView<'_, M> {
+        BondView {
+            molmap: &*self.molmap,
+            id: self.id,
+        }
+    }
+
+    // Public methods, which should consume the view
+
+    /// Set the type of the bond without any additional effects.
+    pub fn set_bond_type(mut self, bond_type: BondType) {
+        self.core().bond_type = bond_type;
+    }
+
+    /// Set the order of the bond without any additional effects.
+    pub fn set_bond_order(mut self, order: f32) {
+        self.core().order = order;
+    }
+
+    /// Removes the bond from the map (but not its bonding partners).
+    pub fn remove(mut self) {
+        self.molmap.core_mut().remove_bond(self.id);
     }
 }

@@ -45,6 +45,7 @@ impl<'a, M: MolMap> From<AtomView<'a, M>> for AtomId {
 }
 
 impl<'a, M: MolMap> AtomView<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&self) -> &'a Atom {
         self.molmap.core().atoms.get(self.id).unwrap()
     }
@@ -75,7 +76,28 @@ impl<'a, M: MolMap> From<AtomViewMut<'a, M>> for AtomId {
 }
 
 impl<'a, M: MolMap> AtomViewMut<'a, M> {
+    /// Returns the corresponding data from the core `MolGraph`.
     fn core(&mut self) -> &mut Atom {
         self.molmap.core_mut().atoms.get_mut(self.id).unwrap()
+    }
+
+    /// Returns an immutable view over the same atom.
+    fn as_ref(&self) -> AtomView<'_, M> {
+        AtomView {
+            molmap: &*self.molmap,
+            id: self.id,
+        }
+    }
+
+    // Public methods, which should consume the view
+
+    /// Set the element of the atom without any additional effects.
+    pub fn set_element(mut self, element: Element) {
+        self.core().element = element
+    }
+
+    /// Removes the atom from the map, as well as any bonds to it.
+    pub fn remove(mut self) {
+        self.molmap.core_mut().remove_atom(self.id);
     }
 }
