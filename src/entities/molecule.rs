@@ -8,7 +8,7 @@
 
 use slotmap::new_key_type;
 
-use crate::{ids::Fundamental, traits::MolMap};
+use crate::{ids::FundamentalId, traits::MolMap};
 
 new_key_type! {
     /// An ID corresponding to a specific molecule entity in a `MolMap`.
@@ -18,7 +18,7 @@ new_key_type! {
 /// The core data of a molecule entity.
 #[derive(Debug)]
 pub(crate) struct Molecule {
-    pub(crate) members: Vec<Fundamental>,
+    pub(crate) members: Vec<FundamentalId>,
 }
 
 impl Molecule {

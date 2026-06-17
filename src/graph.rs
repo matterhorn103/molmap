@@ -105,39 +105,39 @@ impl MolGraph {
     }
 
     /// Checks if the given enum wraps a valid ID.
-    pub(crate) fn contains_atomlike(&self, atomlike: Atomlike) -> bool {
+    pub(crate) fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
         match atomlike {
-            Atomlike::Atom(id) => self.contains_atom(id),
-            Atomlike::Pseudoatom(id) => self.contains_pseudoatom(id),
+            AtomlikeId::Atom(id) => self.contains_atom(id),
+            AtomlikeId::Pseudoatom(id) => self.contains_pseudoatom(id),
         }
     }
 
     /// Checks if the given enum wraps a valid ID.
-    pub(crate) fn contains_fundamental(&self, fundamental: Fundamental) -> bool {
+    pub(crate) fn contains_fundamental(&self, fundamental: FundamentalId) -> bool {
         match fundamental {
-            Fundamental::Atom(id) => self.contains_atom(id),
-            Fundamental::Pseudoatom(id) => self.contains_pseudoatom(id),
-            Fundamental::Bond(id) => self.contains_bond(id),
+            FundamentalId::Atom(id) => self.contains_atom(id),
+            FundamentalId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            FundamentalId::Bond(id) => self.contains_bond(id),
         }
     }
 
     /// Checks if the given enum wraps a valid ID.
-    pub(crate) fn contains_bondable(&self, bondable: Bondable) -> bool {
+    pub(crate) fn contains_bondable(&self, bondable: BondableId) -> bool {
         match bondable {
-            Bondable::Atom(id) => self.contains_atom(id),
-            Bondable::Pseudoatom(id) => self.contains_pseudoatom(id),
-            Bondable::Substituent(id) => self.contains_substituent(id),
+            BondableId::Atom(id) => self.contains_atom(id),
+            BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            BondableId::Substituent(id) => self.contains_substituent(id),
         }
     }
 
     /// Checks if the map contains the entity with the wrapped ID.
-    pub(crate) fn contains_entity(&self, entity: Entity) -> bool {
+    pub(crate) fn contains_entity(&self, entity: EntityId) -> bool {
         match entity {
-            Entity::Atom(id) => self.contains_atom(id),
-            Entity::Pseudoatom(id) => self.contains_pseudoatom(id),
-            Entity::Bond(id) => self.contains_bond(id),
-            Entity::Substituent(id) => self.contains_substituent(id),
-            Entity::Molecule(id) => self.contains_molecule(id),
+            EntityId::Atom(id) => self.contains_atom(id),
+            EntityId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            EntityId::Bond(id) => self.contains_bond(id),
+            EntityId::Substituent(id) => self.contains_substituent(id),
+            EntityId::Molecule(id) => self.contains_molecule(id),
         }
     }
 
@@ -158,7 +158,7 @@ impl MolGraph {
     /// # Panics
     ///
     /// Panics if either of `start` and `end` are invalid.
-    pub(crate) fn add_bond(&mut self, start: Bondable, end: Bondable) -> BondId {
+    pub(crate) fn add_bond(&mut self, start: BondableId, end: BondableId) -> BondId {
         let start = self.convert_bondable(start);
         let end = self.convert_bondable(end);
         let bond_id = self
@@ -197,7 +197,7 @@ impl MolGraph {
     /// Adds a substituent to the map with the given atomlike as its centre.
     ///
     /// Note that this method will not fail, even if `centre` is an invalid ID.
-    pub(crate) fn add_substituent_with_centre(&mut self, centre: Atomlike) -> SubstituentId {
+    pub(crate) fn add_substituent_with_centre(&mut self, centre: AtomlikeId) -> SubstituentId {
         self.substituents.insert(Substituent {
             centre: SubstituentCentre::Single(centre),
             members: vec![centre.into()],
@@ -223,7 +223,7 @@ impl MolGraph {
     pub(crate) fn add_to_substituent(
         &mut self,
         substituent: SubstituentId,
-        fundamental: Fundamental,
+        fundamental: FundamentalId,
     ) {
         let sub = self.substituents.get_mut(substituent).unwrap();
         sub.members.push(fundamental);
@@ -238,7 +238,7 @@ impl MolGraph {
     ///
     /// Panics if `molecule` is invalid, but is unaffected if `fundamental` is
     /// invalid.
-    pub(crate) fn add_to_molecule(&mut self, molecule: MoleculeId, fundamental: Fundamental) {
+    pub(crate) fn add_to_molecule(&mut self, molecule: MoleculeId, fundamental: FundamentalId) {
         let mol = self.molecules.get_mut(molecule).unwrap();
         mol.members.push(fundamental);
     }
@@ -264,7 +264,7 @@ impl MolGraph {
     pub(crate) fn remove_from_substituent(
         &mut self,
         substituent: SubstituentId,
-        fundamental: Fundamental,
+        fundamental: FundamentalId,
     ) {
         let sub = self.substituents.get_mut(substituent).unwrap();
         if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
@@ -276,16 +276,16 @@ impl MolGraph {
         match &mut sub.centre {
             SubstituentCentre::Ambiguous(_) => (),
             SubstituentCentre::Single(atomlike) => {
-                if Fundamental::from(*atomlike) == fundamental {
+                if FundamentalId::from(*atomlike) == fundamental {
                     // Becomes an ambiguous centre
                     sub.centre = SubstituentCentre::default()
                 }
             }
             SubstituentCentre::Multiple(atomlikes) => {
                 if let Some(atomlike) = match fundamental {
-                    Fundamental::Bond(_) => None,
-                    Fundamental::Atom(id) => Some(id.into()),
-                    Fundamental::Pseudoatom(id) => Some(id.into()),
+                    FundamentalId::Bond(_) => None,
+                    FundamentalId::Atom(id) => Some(id.into()),
+                    FundamentalId::Pseudoatom(id) => Some(id.into()),
                 } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
                 {
                     // We want to preserve order
@@ -305,7 +305,11 @@ impl MolGraph {
     /// # Panics
     ///
     /// Panics if `molecule` is invalid.
-    pub(crate) fn remove_from_molecule(&mut self, molecule: MoleculeId, fundamental: Fundamental) {
+    pub(crate) fn remove_from_molecule(
+        &mut self,
+        molecule: MoleculeId,
+        fundamental: FundamentalId,
+    ) {
         let mol = self.molecules.get_mut(molecule).unwrap();
         if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
             mol.members.swap_remove(index);
@@ -412,9 +416,9 @@ impl MolGraph {
         let members = self.substituents.get(id).unwrap().members.clone();
         for member in members {
             match member {
-                Fundamental::Atom(id) => self.remove_atom(id),
-                Fundamental::Pseudoatom(id) => self.remove_pseudoatom(id),
-                Fundamental::Bond(id) => self.remove_bond(id),
+                FundamentalId::Atom(id) => self.remove_atom(id),
+                FundamentalId::Pseudoatom(id) => self.remove_pseudoatom(id),
+                FundamentalId::Bond(id) => self.remove_bond(id),
             }
         }
         self.substituents.remove(id);
@@ -427,9 +431,9 @@ impl MolGraph {
         let members = self.molecules.get(id).unwrap().members.clone();
         for member in members {
             match member {
-                Fundamental::Atom(id) => self.remove_atom(id),
-                Fundamental::Pseudoatom(id) => self.remove_pseudoatom(id),
-                Fundamental::Bond(id) => self.remove_bond(id),
+                FundamentalId::Atom(id) => self.remove_atom(id),
+                FundamentalId::Pseudoatom(id) => self.remove_pseudoatom(id),
+                FundamentalId::Bond(id) => self.remove_bond(id),
             }
         }
         self.molecules.remove(id);
@@ -448,11 +452,11 @@ impl MolGraph {
     ///
     /// For an `Atom` or `Pseudoatom` the ID is simply wrapped in `BondingPartner`
     /// with no checking of validity, so it will never fail.
-    fn convert_bondable(&self, bondable: Bondable) -> BondingPartner {
+    fn convert_bondable(&self, bondable: BondableId) -> BondingPartner {
         match bondable {
-            Bondable::Atom(id) => BondingPartner::Atom(id),
-            Bondable::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
-            Bondable::Substituent(id) => {
+            BondableId::Atom(id) => BondingPartner::Atom(id),
+            BondableId::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
+            BondableId::Substituent(id) => {
                 // Get the substituent's data, panics if ID invalid
                 let substituent = self.substituents.get(id).unwrap();
                 // Use the first centre if any specified, the entire substituent if not
@@ -471,7 +475,7 @@ impl MolGraph {
     }
 
     /// Determines the substituent that contains the atom, pseudoatom, or bond, if any.
-    fn parent_substituent(&self, fundamental: Fundamental) -> Option<SubstituentId> {
+    fn parent_substituent(&self, fundamental: FundamentalId) -> Option<SubstituentId> {
         for (substituent_id, substituent) in self.substituents.iter() {
             if substituent.members.contains(&fundamental) {
                 return Some(substituent_id);
@@ -481,7 +485,7 @@ impl MolGraph {
     }
 
     /// Determines the molecule that contains the atom, pseudoatom, or bond, if any.
-    fn parent_molecule(&self, fundamental: Fundamental) -> Option<MoleculeId> {
+    fn parent_molecule(&self, fundamental: FundamentalId) -> Option<MoleculeId> {
         for (mol_id, mol) in self.molecules.iter() {
             if mol.members.contains(&fundamental) {
                 return Some(mol_id);

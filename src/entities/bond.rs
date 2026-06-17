@@ -9,7 +9,7 @@
 use slotmap::new_key_type;
 
 use crate::{
-    ids::{AtomId, Atomlike, PseudoatomId, SubstituentId},
+    ids::{AtomId, AtomlikeId, PseudoatomId, SubstituentId},
     traits::MolMap,
 };
 
@@ -49,11 +49,11 @@ impl From<PseudoatomId> for BondingPartner {
 }
 // Don't implement From with SubstituentId - it should be checked
 
-impl From<Atomlike> for BondingPartner {
-    fn from(atomlike: Atomlike) -> Self {
+impl From<AtomlikeId> for BondingPartner {
+    fn from(atomlike: AtomlikeId) -> Self {
         match atomlike {
-            Atomlike::Atom(id) => BondingPartner::Atom(id),
-            Atomlike::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
+            AtomlikeId::Atom(id) => BondingPartner::Atom(id),
+            AtomlikeId::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
         }
     }
 }

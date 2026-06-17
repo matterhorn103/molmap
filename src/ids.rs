@@ -22,20 +22,20 @@ pub use crate::entities::substituent::SubstituentId;
 ///
 /// Atomlikes are the true nodes of the molecular graph.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Atomlike {
+pub enum AtomlikeId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
 }
 
-impl From<AtomId> for Atomlike {
+impl From<AtomId> for AtomlikeId {
     fn from(id: AtomId) -> Self {
-        Atomlike::Atom(id)
+        AtomlikeId::Atom(id)
     }
 }
 
-impl From<PseudoatomId> for Atomlike {
+impl From<PseudoatomId> for AtomlikeId {
     fn from(id: PseudoatomId) -> Self {
-        Atomlike::Pseudoatom(id)
+        AtomlikeId::Pseudoatom(id)
     }
 }
 
@@ -43,55 +43,55 @@ impl From<PseudoatomId> for Atomlike {
 ///
 /// Fundamentals are the basic building blocks of a `MolMap`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Fundamental {
+pub enum FundamentalId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
 }
 
-impl From<AtomId> for Fundamental {
+impl From<AtomId> for FundamentalId {
     fn from(id: AtomId) -> Self {
-        Fundamental::Atom(id)
+        FundamentalId::Atom(id)
     }
 }
 
-impl From<PseudoatomId> for Fundamental {
+impl From<PseudoatomId> for FundamentalId {
     fn from(id: PseudoatomId) -> Self {
-        Fundamental::Pseudoatom(id)
+        FundamentalId::Pseudoatom(id)
     }
 }
 
-impl From<BondId> for Fundamental {
+impl From<BondId> for FundamentalId {
     fn from(id: BondId) -> Self {
-        Fundamental::Bond(id)
+        FundamentalId::Bond(id)
     }
 }
 
-impl From<Atomlike> for Fundamental {
-    fn from(atomlike: Atomlike) -> Self {
+impl From<AtomlikeId> for FundamentalId {
+    fn from(atomlike: AtomlikeId) -> Self {
         match atomlike {
-            Atomlike::Atom(id) => Fundamental::Atom(id),
-            Atomlike::Pseudoatom(id) => Fundamental::Pseudoatom(id),
+            AtomlikeId::Atom(id) => FundamentalId::Atom(id),
+            AtomlikeId::Pseudoatom(id) => FundamentalId::Pseudoatom(id),
         }
     }
 }
 
 /// An ID of a collection, an aggregation of fundamental entities.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Collection {
+pub enum CollectionId {
     Substituent(SubstituentId),
     Molecule(MoleculeId),
 }
 
-impl From<SubstituentId> for Collection {
+impl From<SubstituentId> for CollectionId {
     fn from(id: SubstituentId) -> Self {
-        Collection::Substituent(id)
+        CollectionId::Substituent(id)
     }
 }
 
-impl From<MoleculeId> for Collection {
+impl From<MoleculeId> for CollectionId {
     fn from(id: MoleculeId) -> Self {
-        Collection::Molecule(id)
+        CollectionId::Molecule(id)
     }
 }
 
@@ -100,43 +100,43 @@ impl From<MoleculeId> for Collection {
 /// The actual entities that bonds connect are represented by [`crate::entities::bond::BondingPartner`],
 /// which is more restrictive.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Bondable {
+pub enum BondableId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     //Bond(BondId),
     Substituent(SubstituentId),
 }
 
-impl From<AtomId> for Bondable {
+impl From<AtomId> for BondableId {
     fn from(id: AtomId) -> Self {
-        Bondable::Atom(id)
+        BondableId::Atom(id)
     }
 }
 
-impl From<PseudoatomId> for Bondable {
+impl From<PseudoatomId> for BondableId {
     fn from(id: PseudoatomId) -> Self {
-        Bondable::Pseudoatom(id)
+        BondableId::Pseudoatom(id)
     }
 }
 
-impl From<SubstituentId> for Bondable {
+impl From<SubstituentId> for BondableId {
     fn from(id: SubstituentId) -> Self {
-        Bondable::Substituent(id)
+        BondableId::Substituent(id)
     }
 }
 
-impl From<Atomlike> for Bondable {
-    fn from(atomlike: Atomlike) -> Self {
+impl From<AtomlikeId> for BondableId {
+    fn from(atomlike: AtomlikeId) -> Self {
         match atomlike {
-            Atomlike::Atom(id) => Bondable::Atom(id),
-            Atomlike::Pseudoatom(id) => Bondable::Pseudoatom(id),
+            AtomlikeId::Atom(id) => BondableId::Atom(id),
+            AtomlikeId::Pseudoatom(id) => BondableId::Pseudoatom(id),
         }
     }
 }
 
 /// An ID of an entity that an `Object` can be attached to.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Anchor {
+pub enum AnchorId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
@@ -144,39 +144,39 @@ pub enum Anchor {
     Molecule(MoleculeId),
 }
 
-impl From<AtomId> for Anchor {
+impl From<AtomId> for AnchorId {
     fn from(id: AtomId) -> Self {
-        Anchor::Atom(id)
+        AnchorId::Atom(id)
     }
 }
 
-impl From<PseudoatomId> for Anchor {
+impl From<PseudoatomId> for AnchorId {
     fn from(id: PseudoatomId) -> Self {
-        Anchor::Pseudoatom(id)
+        AnchorId::Pseudoatom(id)
     }
 }
 
-impl From<BondId> for Anchor {
+impl From<BondId> for AnchorId {
     fn from(id: BondId) -> Self {
-        Anchor::Bond(id)
+        AnchorId::Bond(id)
     }
 }
 
-impl From<SubstituentId> for Anchor {
+impl From<SubstituentId> for AnchorId {
     fn from(id: SubstituentId) -> Self {
-        Anchor::Substituent(id)
+        AnchorId::Substituent(id)
     }
 }
 
-impl From<MoleculeId> for Anchor {
+impl From<MoleculeId> for AnchorId {
     fn from(id: MoleculeId) -> Self {
-        Anchor::Molecule(id)
+        AnchorId::Molecule(id)
     }
 }
 
 /// An ID of any kind of entity.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Entity {
+pub enum EntityId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     Bond(BondId),
@@ -184,71 +184,71 @@ pub enum Entity {
     Molecule(MoleculeId),
 }
 
-impl From<AtomId> for Entity {
+impl From<AtomId> for EntityId {
     fn from(id: AtomId) -> Self {
-        Entity::Atom(id)
+        EntityId::Atom(id)
     }
 }
 
-impl From<PseudoatomId> for Entity {
+impl From<PseudoatomId> for EntityId {
     fn from(id: PseudoatomId) -> Self {
-        Entity::Pseudoatom(id)
+        EntityId::Pseudoatom(id)
     }
 }
 
-impl From<BondId> for Entity {
+impl From<BondId> for EntityId {
     fn from(id: BondId) -> Self {
-        Entity::Bond(id)
+        EntityId::Bond(id)
     }
 }
 
-impl From<SubstituentId> for Entity {
+impl From<SubstituentId> for EntityId {
     fn from(id: SubstituentId) -> Self {
-        Entity::Substituent(id)
+        EntityId::Substituent(id)
     }
 }
 
-impl From<MoleculeId> for Entity {
+impl From<MoleculeId> for EntityId {
     fn from(id: MoleculeId) -> Self {
-        Entity::Molecule(id)
+        EntityId::Molecule(id)
     }
 }
 
-impl From<Atomlike> for Entity {
-    fn from(atomlike: Atomlike) -> Self {
+impl From<AtomlikeId> for EntityId {
+    fn from(atomlike: AtomlikeId) -> Self {
         match atomlike {
-            Atomlike::Atom(id) => Entity::Atom(id),
-            Atomlike::Pseudoatom(id) => Entity::Pseudoatom(id),
+            AtomlikeId::Atom(id) => EntityId::Atom(id),
+            AtomlikeId::Pseudoatom(id) => EntityId::Pseudoatom(id),
         }
     }
 }
 
-impl From<Fundamental> for Entity {
-    fn from(fundamental: Fundamental) -> Self {
+impl From<FundamentalId> for EntityId {
+    fn from(fundamental: FundamentalId) -> Self {
         match fundamental {
-            Fundamental::Atom(id) => Entity::Atom(id),
-            Fundamental::Pseudoatom(id) => Entity::Pseudoatom(id),
-            Fundamental::Bond(id) => Entity::Bond(id),
+            FundamentalId::Atom(id) => EntityId::Atom(id),
+            FundamentalId::Pseudoatom(id) => EntityId::Pseudoatom(id),
+            FundamentalId::Bond(id) => EntityId::Bond(id),
         }
     }
 }
 
-impl From<Collection> for Entity {
-    fn from(collection: Collection) -> Self {
+impl From<CollectionId> for EntityId {
+    fn from(collection: CollectionId) -> Self {
         match collection {
-            Collection::Substituent(id) => Entity::Substituent(id),
-            Collection::Molecule(id) => Entity::Molecule(id),
+            CollectionId::Substituent(id) => EntityId::Substituent(id),
+            CollectionId::Molecule(id) => EntityId::Molecule(id),
         }
     }
 }
 
-impl From<Bondable> for Entity {
-    fn from(bondable: Bondable) -> Self {
+impl From<BondableId> for EntityId {
+    fn from(bondable: BondableId) -> Self {
         match bondable {
-            Bondable::Atom(id) => Entity::Atom(id),
-            Bondable::Pseudoatom(id) => Entity::Pseudoatom(id),
+            BondableId::Atom(id) => EntityId::Atom(id),
+            BondableId::Pseudoatom(id) => EntityId::Pseudoatom(id),
             //Bondable::Bond(id) => Entity::Bond(id),
-            Bondable::Substituent(id) => Entity::Substituent(id),
+            BondableId::Substituent(id) => EntityId::Substituent(id),
         }
     }
 }
@@ -263,14 +263,14 @@ impl From<Bondable> for Entity {
 //    }
 //}
 
-impl From<Anchor> for Entity {
-    fn from(anchor: Anchor) -> Self {
+impl From<AnchorId> for EntityId {
+    fn from(anchor: AnchorId) -> Self {
         match anchor {
-            Anchor::Atom(id) => Entity::Atom(id),
-            Anchor::Pseudoatom(id) => Entity::Pseudoatom(id),
-            Anchor::Bond(id) => Entity::Bond(id),
-            Anchor::Substituent(id) => Entity::Substituent(id),
-            Anchor::Molecule(id) => Entity::Molecule(id),
+            AnchorId::Atom(id) => EntityId::Atom(id),
+            AnchorId::Pseudoatom(id) => EntityId::Pseudoatom(id),
+            AnchorId::Bond(id) => EntityId::Bond(id),
+            AnchorId::Substituent(id) => EntityId::Substituent(id),
+            AnchorId::Molecule(id) => EntityId::Molecule(id),
         }
     }
 }

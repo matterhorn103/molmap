@@ -9,7 +9,7 @@
 use slotmap::new_key_type;
 
 use crate::{
-    ids::{Atomlike, BondId, Fundamental},
+    ids::{AtomlikeId, BondId, FundamentalId},
     traits::MolMap,
 };
 
@@ -21,8 +21,8 @@ new_key_type! {
 #[derive(Debug)]
 pub(crate) enum SubstituentCentre {
     Ambiguous(Vec<BondId>),
-    Single(Atomlike),
-    Multiple(Vec<Atomlike>),
+    Single(AtomlikeId),
+    Multiple(Vec<AtomlikeId>),
 }
 
 impl Default for SubstituentCentre {
@@ -45,11 +45,11 @@ impl Default for SubstituentCentre {
 #[derive(Debug)]
 pub(crate) struct Substituent {
     pub(crate) centre: SubstituentCentre,
-    pub(crate) members: Vec<Fundamental>,
+    pub(crate) members: Vec<FundamentalId>,
 }
 
 impl Substituent {
-    pub(crate) fn new(members: &[Fundamental]) -> Self {
+    pub(crate) fn new(members: &[FundamentalId]) -> Self {
         Self {
             centre: SubstituentCentre::default(),
             members: members.to_vec(),

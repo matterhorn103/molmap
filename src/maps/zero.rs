@@ -9,7 +9,7 @@
 use crate::{
     Element, MolMapError, MolMapResult,
     graph::MolGraph,
-    ids::{AtomId, Atomlike, BondId, Bondable, MoleculeId, PseudoatomId, SubstituentId},
+    ids::{AtomId, AtomlikeId, BondId, BondableId, MoleculeId, PseudoatomId, SubstituentId},
     traits::MolMap,
 };
 
@@ -59,7 +59,7 @@ impl MolMap0 {
     /// Creates a new (single covalent) bond between two bondable entities.
     ///
     /// Fails if either of `start` and `end` are invalid.
-    pub fn add_bond(&mut self, start: Bondable, end: Bondable) -> MolMapResult<BondId> {
+    pub fn add_bond(&mut self, start: BondableId, end: BondableId) -> MolMapResult<BondId> {
         if !self.core.contains_bondable(start) {
             return Err(MolMapError::Id(start.into()));
         } else if !self.core.contains_bondable(end) {
@@ -71,7 +71,7 @@ impl MolMap0 {
     /// Adds a substituent to the map with a single central atom.
     ///
     /// Fails if `centre` is invalid.
-    pub fn add_substituent(&mut self, centre: Atomlike) -> MolMapResult<SubstituentId> {
+    pub fn add_substituent(&mut self, centre: AtomlikeId) -> MolMapResult<SubstituentId> {
         if !self.core.contains_atomlike(centre) {
             return Err(MolMapError::Id(centre.into()));
         }

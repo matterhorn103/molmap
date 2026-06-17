@@ -96,10 +96,10 @@ pub trait MolMap: Debug + Default {
     }
 
     /// Checks if the given enum wraps a valid ID.
-    fn contains_atomlike(&self, atomlike: Atomlike) -> bool {
+    fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
         match atomlike {
-            Atomlike::Atom(id) => self.contains_atom(id),
-            Atomlike::Pseudoatom(id) => self.contains_pseudoatom(id),
+            AtomlikeId::Atom(id) => self.contains_atom(id),
+            AtomlikeId::Pseudoatom(id) => self.contains_pseudoatom(id),
         }
     }
 
