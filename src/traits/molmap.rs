@@ -88,36 +88,65 @@ pub trait MolMap: Debug + Default {
         self.core().molecule_ids()
     }
 
-    /// Checks if the given ID is valid.
+    /// Checks if the given ID corresponds to an atom currently in the map.
     fn contains_atom(&self, id: AtomId) -> bool {
         self.core().contains_atom(id)
     }
 
-    /// Checks if the given ID is valid.
+    /// Checks if the given ID corresponds to a pseudoatom currently in the map.
     fn contains_pseudoatom(&self, id: PseudoatomId) -> bool {
         self.core().contains_pseudoatom(id)
     }
 
-    /// Checks if the given ID is valid.
+    /// Checks if the given ID corresponds to a bond currently in the map.
     fn contains_bond(&self, id: BondId) -> bool {
         self.core().contains_bond(id)
     }
 
-    /// Checks if the given ID is valid.
+    /// Checks if the given ID corresponds to a substituent currently in the map.
     fn contains_substituent(&self, id: SubstituentId) -> bool {
         self.core().contains_substituent(id)
     }
 
-    /// Checks if the given ID is valid.
+    /// Checks if the given ID corresponds to a molecule currently in the map.
     fn contains_molecule(&self, id: MoleculeId) -> bool {
         self.core().contains_molecule(id)
     }
 
-    /// Checks if the given enum wraps a valid ID.
+    /// Checks if the given ID corresponds to an atom or pseudoatom currently in the map.
     fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
         match atomlike {
             AtomlikeId::Atom(id) => self.contains_atom(id),
             AtomlikeId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        }
+    }
+
+    /// Checks if the given ID corresponds to an atom, pseudoatom, or bond currently in the map.
+    fn contains_fundamental(&self, fundamental: FundamentalId) -> bool {
+        match fundamental {
+            FundamentalId::Atom(id) => self.contains_atom(id),
+            FundamentalId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            FundamentalId::Bond(id) => self.contains_bond(id),
+        }
+    }
+
+    /// Checks if the given ID corresponds to an atom, pseudoatom, or substituent currently in the map.
+    fn contains_bondable(&self, bondable: BondableId) -> bool {
+        match bondable {
+            BondableId::Atom(id) => self.contains_atom(id),
+            BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            BondableId::Substituent(id) => self.contains_substituent(id),
+        }
+    }
+
+    /// Checks if the map currently contains the entity with the given ID.
+    fn contains(&self, entity: EntityId) -> bool {
+        match entity {
+            EntityId::Atom(id) => self.contains_atom(id),
+            EntityId::Pseudoatom(id) => self.contains_pseudoatom(id),
+            EntityId::Bond(id) => self.contains_bond(id),
+            EntityId::Substituent(id) => self.contains_substituent(id),
+            EntityId::Molecule(id) => self.contains_molecule(id),
         }
     }
 

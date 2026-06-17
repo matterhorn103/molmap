@@ -144,8 +144,8 @@ impl MolGraph {
         }
     }
 
-    /// Checks if the map contains the entity with the wrapped ID.
-    pub(crate) fn contains_entity(&self, entity: EntityId) -> bool {
+    /// Checks if the map currently contains the entity with the given ID.
+    pub(crate) fn contains(&self, entity: EntityId) -> bool {
         match entity {
             EntityId::Atom(id) => self.contains_atom(id),
             EntityId::Pseudoatom(id) => self.contains_pseudoatom(id),
