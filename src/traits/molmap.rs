@@ -17,19 +17,37 @@ use crate::{graph::MolGraph, ids::*, views::*};
 /// 1. obtaining an immutable or mutable view of an entity from its ID e.g.
 ///    [`MolMap::atom()`] and [`MolMap::atom_mut()`]
 /// 2. verifying an ID e.g. [`MolMap::contains_atom()`]
-/// 3. iterating over views of all of a given type of entity e.g. [`MolMap::atoms()`]
-/// 4. iterating over all IDs of a given type of entity e.g. [`MolMap::atom_ids()`]
+/// 3. iterating over views of all of a given kind of entity e.g. [`MolMap::atoms()`]
+/// 4. iterating over all IDs of a given kind of entity e.g. [`MolMap::atom_ids()`]
 pub trait MolMap: Debug + Default {
     /// Creates an empty `MolMap`.
     ///
-    /// As the constituent `SlotMap`s are created with an initial capacity of 0, reallocations will
-    /// occur frequently if many entities are subsequently inserted.
-    /// If you have an idea of approximately how large the `MolMap` needs to be, it is recommended
-    /// to use `MolMap.with_capacity()` instead.
+    /// As the constituent `SlotMap`s are created with an initial capacity of 0, reallocations
+    /// will occur frequently if many entities are subsequently inserted.
+    /// If you have an idea of approximately how large the `MolMap` needs to be, it is
+    /// recommended to use `MolMap.with_capacity()` or `with_capacities()` instead.
     fn new() -> Self;
 
-    /// Creates a new `MolMap` with capacity for approximately `n` atoms.
-    fn with_capacity(n: usize) -> Self;
+    /// Creates a new `MolMap` with the specified initial capacities for each kind of entity.
+    fn with_capacities(
+        atoms: usize,
+        pseudoatoms: usize,
+        bonds: usize,
+        substituents: usize,
+        molecules: usize,
+    ) -> Self;
+
+    /// Creates a new `MolMap` with initial capacity for approximately `n` atoms.
+    ///
+    /// In the default implementation, this results in a map with capacity for:
+    /// - `n` atoms
+    /// - `n / 10` pseudoatoms
+    /// - `n` bonds
+    /// - `n / 3` substituents
+    /// - `(n / 100) + 1` molecules
+    fn with_capacity(n: usize) -> Self {
+        Self::with_capacities(n, n / 10, n, n / 3, (n / 100) + 1)
+    }
 
     /// Returns the core molecular graph (private).
     #[allow(private_interfaces)]

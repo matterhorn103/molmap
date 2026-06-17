@@ -34,6 +34,7 @@ pub(crate) struct MolGraph {
 }
 
 impl MolGraph {
+    /// Creates a new, empty `MolGraph`.
     pub(crate) fn new() -> Self {
         Self {
             atoms: SlotMap::with_key(),
@@ -44,8 +45,21 @@ impl MolGraph {
         }
     }
 
-    pub(crate) fn with_capacity(n: usize) -> Self {
-        todo!()
+    /// Creates a new `MolGraph` with the specified capacities for each kind of entity.
+    pub(crate) fn with_capacities(
+        atoms: usize,
+        pseudoatoms: usize,
+        bonds: usize,
+        substituents: usize,
+        molecules: usize,
+    ) -> Self {
+        Self {
+            atoms: SlotMap::with_capacity_and_key(atoms),
+            pseudoatoms: SlotMap::with_capacity_and_key(pseudoatoms),
+            bonds: SlotMap::with_capacity_and_key(bonds),
+            substituents: SlotMap::with_capacity_and_key(substituents),
+            molecules: SlotMap::with_capacity_and_key(molecules),
+        }
     }
 }
 

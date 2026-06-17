@@ -26,8 +26,16 @@ impl MolMap for MolMap0 {
         }
     }
 
-    fn with_capacity(n: usize) -> Self {
-        todo!()
+    fn with_capacities(
+        atoms: usize,
+        pseudoatoms: usize,
+        bonds: usize,
+        substituents: usize,
+        molecules: usize,
+    ) -> Self {
+        Self {
+            core: MolGraph::with_capacities(atoms, pseudoatoms, bonds, substituents, molecules),
+        }
     }
 
     #[allow(private_interfaces)]
