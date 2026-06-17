@@ -61,13 +61,6 @@ impl<'a, M: MolMap> From<MoleculeViewMut<'a, M>> for MoleculeId {
 }
 
 impl<'a, M: MolMap> MoleculeViewMut<'a, M> {
-    fn as_ref(&self) -> MoleculeView<'_, M> {
-        MoleculeView {
-            molmap: &*self.molmap,
-            id: self.id,
-        }
-    }
-
     fn core(&mut self) -> &mut Molecule {
         self.molmap.core_mut().molecules.get_mut(self.id).unwrap()
     }

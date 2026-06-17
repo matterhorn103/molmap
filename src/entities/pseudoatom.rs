@@ -75,13 +75,6 @@ impl<'a, M: MolMap> From<PseudoatomViewMut<'a, M>> for PseudoatomId {
 }
 
 impl<'a, M: MolMap> PseudoatomViewMut<'a, M> {
-    fn as_ref(&self) -> PseudoatomView<'_, M> {
-        PseudoatomView {
-            molmap: &*self.molmap,
-            id: self.id,
-        }
-    }
-
     fn core(&mut self) -> &mut Pseudoatom {
         self.molmap.core_mut().pseudoatoms.get_mut(self.id).unwrap()
     }

@@ -89,13 +89,6 @@ impl<'a, M: MolMap> From<SubstituentViewMut<'a, M>> for SubstituentId {
 }
 
 impl<'a, M: MolMap> SubstituentViewMut<'a, M> {
-    fn as_ref(&self) -> SubstituentView<'_, M> {
-        SubstituentView {
-            molmap: &*self.molmap,
-            id: self.id,
-        }
-    }
-
     fn core(&mut self) -> &mut Substituent {
         self.molmap
             .core_mut()

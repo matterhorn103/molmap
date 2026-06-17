@@ -128,13 +128,6 @@ impl<'a, M: MolMap> From<BondViewMut<'a, M>> for BondId {
 }
 
 impl<'a, M: MolMap> BondViewMut<'a, M> {
-    fn as_ref(&self) -> BondView<'_, M> {
-        BondView {
-            molmap: &*self.molmap,
-            id: self.id,
-        }
-    }
-
     fn core(&mut self) -> &mut Bond {
         self.molmap.core_mut().bonds.get_mut(self.id).unwrap()
     }
