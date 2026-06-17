@@ -6,8 +6,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, BondId, SubstituentId, Fundamental, MolMap, MoleculeId, PseudoatomId};
+use slotmap::new_key_type;
 
+use crate::{ids::Fundamental, traits::MolMap};
+
+new_key_type! {
+    /// An ID corresponding to a specific molecule entity in a `MolMap`.
+    pub struct MoleculeId;
+}
+
+/// The core data of a molecule entity.
 #[derive(Debug)]
 pub(crate) struct Molecule {
     pub(crate) members: Vec<Fundamental>,
@@ -21,6 +29,7 @@ impl Molecule {
     }
 }
 
+/// An immutable view over a specific molecule entity in a specific `MolMap`.
 #[derive(Clone, Copy)]
 pub struct MoleculeView<'a, M: MolMap> {
     pub molmap: &'a M,
@@ -39,6 +48,7 @@ impl<'a, M: MolMap> MoleculeView<'a, M> {
     }
 }
 
+/// A mutable view over a specific molecule entity in a specific `MolMap`.
 pub struct MoleculeViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: MoleculeId,
@@ -58,7 +68,7 @@ impl<'a, M: MolMap> MoleculeViewMut<'a, M> {
         }
     }
 
-    fn inner(mut self) -> &'a mut Molecule {
+    fn core(&mut self) -> &mut Molecule {
         self.molmap.core_mut().molecules.get_mut(self.id).unwrap()
     }
 }

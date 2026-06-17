@@ -6,18 +6,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use slotmap::{SlotMap, basic::Iter};
-
-use std::{fmt::Debug, hash::RandomState};
-
 use crate::{
-    Element, MolMap, MolMapError, MolMapResult, bond::BondType, entities::*, graph::MolGraph,
-    id::*, substituent::SubstituentCentre,
+    Element, MolMapError, MolMapResult,
+    graph::MolGraph,
+    ids::{AtomId, Atomlike, BondId, Bondable, MoleculeId, PseudoatomId, SubstituentId},
+    traits::MolMap,
 };
 
-/// An arena-like data structure to represent a set of chemical entities,
-/// their properties, and the relationships between them, as a pure molecular graph,
-/// without spatial positions.
+/// A pure molecular graph, without spatial positions.
 #[derive(Debug, Default)]
 pub struct MolMap0 {
     pub(crate) core: MolGraph,

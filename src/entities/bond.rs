@@ -6,8 +6,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{BondId, Bondable, BondingPartner, MolMap};
+use slotmap::new_key_type;
 
+use crate::{
+    ids::{AtomId, Atomlike, PseudoatomId, SubstituentId},
+    traits::MolMap,
+};
+
+new_key_type! {
+    /// An ID corresponding to a specific bond entity in a `MolMap`.
+    pub struct BondId;
+}
+
+/// The type of a bond e.g. covalent, ionic.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum BondType {
     Covalent,
@@ -16,6 +27,38 @@ pub enum BondType {
     Ionic,
 }
 
+/// The endpoints of bonds.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum BondingPartner {
+    Atom(AtomId),
+    Pseudoatom(PseudoatomId),
+    // BondingSystem(BondingSystemId),  // future
+    AmbiguouslyBondingSubstituent(SubstituentId),
+}
+
+impl From<AtomId> for BondingPartner {
+    fn from(id: AtomId) -> Self {
+        BondingPartner::Atom(id)
+    }
+}
+
+impl From<PseudoatomId> for BondingPartner {
+    fn from(id: PseudoatomId) -> Self {
+        BondingPartner::Pseudoatom(id)
+    }
+}
+// Don't implement From with SubstituentId - it should be checked
+
+impl From<Atomlike> for BondingPartner {
+    fn from(atomlike: Atomlike) -> Self {
+        match atomlike {
+            Atomlike::Atom(id) => BondingPartner::Atom(id),
+            Atomlike::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
+        }
+    }
+}
+
+/// The core data of a bond entity.
 #[derive(Debug)]
 pub(crate) struct Bond {
     pub(crate) bond_type: BondType,
@@ -40,6 +83,7 @@ impl Bond {
     }
 }
 
+/// An immutable view over a specific bond entity in a specific `MolMap`.
 #[derive(Clone, Copy)]
 pub struct BondView<'a, M: MolMap> {
     pub molmap: &'a M,
@@ -71,6 +115,7 @@ impl<'a, M: MolMap> BondView<'a, M> {
     }
 }
 
+/// A mutable view over a specific bond entity in a specific `MolMap`.
 pub struct BondViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: BondId,

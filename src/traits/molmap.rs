@@ -6,17 +6,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use slotmap::{SlotMap, basic::Iter};
+use std::fmt::Debug;
 
-use std::{fmt::Debug, hash::RandomState};
+use crate::{graph::MolGraph, ids::*, views::*};
 
-use crate::{Element, bond::BondType, entities::*, substituent::SubstituentCentre, graph::MolGraph, id::*};
-
-/// Trait implemented by all varieties of `MolMap`.
-/// 
-/// All concrete `MolMap` types wrap a [`MolGraph`], so this trait exposes functionality that
-/// operates on the core graph such that the different varieties of `MolMap` can be used
-/// interchangeably in many instances.
+/// An arena-like data structure to represent a set of chemical entities, their
+/// properties, and the relationships between them, with or without spatial positions.
+///
+/// This trait provides methods for:
+/// 1. obtaining an immutable or mutable view of an entity from its ID e.g.
+///    [`MolMap::atom()`] and [`MolMap::atom_mut()`]
+/// 2. verifying an ID e.g. [`MolMap::contains_atom()`]
+/// 3. iterating over views of all of a given type of entity e.g. [`MolMap::atoms()`]
+/// 4. iterating over all IDs of a given type of entity e.g. [`MolMap::atom_ids()`]
 pub trait MolMap: Debug + Default {
     /// Creates an empty `MolMap`.
     ///
@@ -29,11 +31,11 @@ pub trait MolMap: Debug + Default {
     /// Creates a new `MolMap` with capacity for approximately `n` atoms.
     fn with_capacity(n: usize) -> Self;
 
-    /// Returns the core molecular graph.
+    /// Returns the core molecular graph (private).
     #[allow(private_interfaces)]
     fn core(&self) -> &MolGraph;
 
-    /// Returns the core molecular graph in mutable form.
+    /// Returns the core molecular graph (private) in mutable form.
     #[allow(private_interfaces)]
     fn core_mut(&mut self) -> &mut MolGraph;
 
@@ -110,13 +112,17 @@ pub trait MolMap: Debug + Default {
     /// Constructs an immutable `AtomView` for the given atom,
     /// returning `None` if the ID is invalid.
     fn atom(&'_ self, id: AtomId) -> Option<AtomView<'_, Self>> {
-        self.core().contains_atom(id).then_some(AtomView { molmap: self, id })
+        self.core()
+            .contains_atom(id)
+            .then_some(AtomView { molmap: self, id })
     }
 
     /// Constructs a mutable `AtomViewMut` for the given atom, returning `None` if the ID is
     /// invalid.
     fn atom_mut(&'_ mut self, id: AtomId) -> Option<AtomViewMut<'_, Self>> {
-        self.core().contains_atom(id).then_some(AtomViewMut { molmap: self, id })
+        self.core()
+            .contains_atom(id)
+            .then_some(AtomViewMut { molmap: self, id })
     }
 
     /// Returns an iterator over views of all atoms in the map.
@@ -127,7 +133,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs an immutable `PseudoatomView` for the given pseudoatom, returning `None` if the
     /// ID is invalid.
     fn pseudoatom(&'_ self, id: PseudoatomId) -> Option<PseudoatomView<'_, Self>> {
-        self.core().pseudoatoms
+        self.core()
+            .pseudoatoms
             .contains_key(id)
             .then_some(PseudoatomView { molmap: self, id })
     }
@@ -135,7 +142,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs a mutable `PseudoatomViewMut` for the given pseudoatom, returning `None` if the
     /// ID is invalid.
     fn pseudoatom_mut(&'_ mut self, id: PseudoatomId) -> Option<PseudoatomViewMut<'_, Self>> {
-        self.core().pseudoatoms
+        self.core()
+            .pseudoatoms
             .contains_key(id)
             .then_some(PseudoatomViewMut { molmap: self, id })
     }
@@ -148,7 +156,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs an immutable `BondView` for the given bond, returning `None` if the ID is
     /// invalid.
     fn bond(&'_ self, id: BondId) -> Option<BondView<'_, Self>> {
-        self.core().bonds
+        self.core()
+            .bonds
             .contains_key(id)
             .then_some(BondView { molmap: self, id })
     }
@@ -156,7 +165,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs a mutable `BondViewMut` for the given bond, returning `None` if the ID is
     /// invalid.
     fn bond_mut(&'_ mut self, id: BondId) -> Option<BondViewMut<'_, Self>> {
-        self.core().bonds
+        self.core()
+            .bonds
             .contains_key(id)
             .then_some(BondViewMut { molmap: self, id })
     }
@@ -169,7 +179,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs an immutable `SubstituentView` for the given substituent, returning `None` if the ID is
     /// invalid.
     fn substituent(&'_ self, id: SubstituentId) -> Option<SubstituentView<'_, Self>> {
-        self.core().substituents
+        self.core()
+            .substituents
             .contains_key(id)
             .then_some(SubstituentView { molmap: self, id })
     }
@@ -177,20 +188,23 @@ pub trait MolMap: Debug + Default {
     /// Constructs a mutable `SubstituentViewMut` for the given substituent, returning `None` if the ID is
     /// invalid.
     fn substituent_mut(&'_ mut self, id: SubstituentId) -> Option<SubstituentViewMut<'_, Self>> {
-        self.core().substituents
+        self.core()
+            .substituents
             .contains_key(id)
             .then_some(SubstituentViewMut { molmap: self, id })
     }
 
     /// Returns an iterator over views of all substituents in the map.
     fn substituents(&'_ self) -> impl Iterator<Item = SubstituentView<'_, Self>> + '_ {
-        self.substituent_ids().map(|id| self.substituent(id).unwrap())
+        self.substituent_ids()
+            .map(|id| self.substituent(id).unwrap())
     }
 
     /// Constructs an immutable `MoleculeView` for the given molecule, returning `None` if the ID is
     /// invalid.
     fn molecule(&'_ self, id: MoleculeId) -> Option<MoleculeView<'_, Self>> {
-        self.core().molecules
+        self.core()
+            .molecules
             .contains_key(id)
             .then_some(MoleculeView { molmap: self, id })
     }
@@ -198,7 +212,8 @@ pub trait MolMap: Debug + Default {
     /// Constructs a mutable `MoleculeViewMut` for the given molecule, returning `None` if the ID is
     /// invalid.
     fn molecule_mut(&'_ mut self, id: MoleculeId) -> Option<MoleculeViewMut<'_, Self>> {
-        self.core().molecules
+        self.core()
+            .molecules
             .contains_key(id)
             .then_some(MoleculeViewMut { molmap: self, id })
     }

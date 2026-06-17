@@ -6,30 +6,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use slotmap::new_key_type;
+// The entity ID types are defined in the corresponding entity modules; we
+// re-export them publicly here
 
-// Create all the Id types
-new_key_type! {
-    pub struct AtomId;
-}
-new_key_type! {
-    pub struct PseudoatomId;
-}
-new_key_type! {
-    pub struct BondId;
-}
-new_key_type! {
-    pub struct SubstituentId;
-}
-new_key_type! {
-    pub struct MoleculeId;
-}
+pub use crate::entities::atom::AtomId;
+pub use crate::entities::bond::BondId;
+pub use crate::entities::molecule::MoleculeId;
+pub use crate::entities::pseudoatom::PseudoatomId;
+pub use crate::entities::substituent::SubstituentId;
 
-// We use enums, not traits, to classify entities and narrow functionality
+// We use composite enums of IDs, not traits, to classify entities and narrow
+// functionality
 
-/// Atoms, and things that need to behave like atoms.
+/// An ID of an atom or something that behaves like one (a pseudoatom).
 ///
-/// These are the true nodes of the molecular graph.
+/// Atomlikes are the true nodes of the molecular graph.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Atomlike {
     Atom(AtomId),
@@ -48,7 +39,9 @@ impl From<PseudoatomId> for Atomlike {
     }
 }
 
-/// The basic building blocks of a `MolMap` that do not group other entities.
+/// An ID of a fundamental entity, an entity that does not group other entities.
+///
+/// Fundamentals are the basic building blocks of a `MolMap`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Fundamental {
     Atom(AtomId),
@@ -83,7 +76,7 @@ impl From<Atomlike> for Fundamental {
     }
 }
 
-/// Aggregations of `Fundamental` entities.
+/// An ID of a collection, an aggregation of fundamental entities.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Collection {
     Substituent(SubstituentId),
@@ -102,9 +95,9 @@ impl From<MoleculeId> for Collection {
     }
 }
 
-/// Things that can form bonds.
+/// An ID of an entity that can form bonds.
 ///
-/// The actual entities that bonds connect are represented by `BondingPartner`,
+/// The actual entities that bonds connect are represented by [`crate::entities::bond::BondingPartner`],
 /// which is more restrictive.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Bondable {
@@ -141,38 +134,7 @@ impl From<Atomlike> for Bondable {
     }
 }
 
-/// The endpoints of bonds.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum BondingPartner {
-    Atom(AtomId),
-    Pseudoatom(PseudoatomId),
-    // BondingSystem(BondingSystemId),  // future
-    AmbiguouslyBondingSubstituent(SubstituentId),
-}
-
-impl From<AtomId> for BondingPartner {
-    fn from(id: AtomId) -> Self {
-        BondingPartner::Atom(id)
-    }
-}
-
-impl From<PseudoatomId> for BondingPartner {
-    fn from(id: PseudoatomId) -> Self {
-        BondingPartner::Pseudoatom(id)
-    }
-}
-// Don't implement From with SubstituentId - it should be checked
-
-impl From<Atomlike> for BondingPartner {
-    fn from(atomlike: Atomlike) -> Self {
-        match atomlike {
-            Atomlike::Atom(id) => BondingPartner::Atom(id),
-            Atomlike::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
-        }
-    }
-}
-
-/// Entities that an `Object` can be attached to.
+/// An ID of an entity that an `Object` can be attached to.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Anchor {
     Atom(AtomId),
@@ -212,7 +174,7 @@ impl From<MoleculeId> for Anchor {
     }
 }
 
-/// All the members of `MolMap`s that have corresponding ID types.
+/// An ID of any kind of entity.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Entity {
     Atom(AtomId),
@@ -291,15 +253,15 @@ impl From<Bondable> for Entity {
     }
 }
 
-impl From<BondingPartner> for Entity {
-    fn from(partner: BondingPartner) -> Self {
-        match partner {
-            BondingPartner::Atom(id) => Entity::Atom(id),
-            BondingPartner::Pseudoatom(id) => Entity::Pseudoatom(id),
-            BondingPartner::AmbiguouslyBondingSubstituent(id) => Entity::Substituent(id),
-        }
-    }
-}
+//impl From<BondingPartner> for Entity {
+//    fn from(partner: BondingPartner) -> Self {
+//        match partner {
+//            BondingPartner::Atom(id) => Entity::Atom(id),
+//            BondingPartner::Pseudoatom(id) => Entity::Pseudoatom(id),
+//            BondingPartner::AmbiguouslyBondingSubstituent(id) => Entity::Substituent(id),
+//        }
+//    }
+//}
 
 impl From<Anchor> for Entity {
     fn from(anchor: Anchor) -> Self {

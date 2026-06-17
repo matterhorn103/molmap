@@ -6,10 +6,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{BondId, SubstituentId, MolMap, PseudoatomId};
+use slotmap::new_key_type;
 
-// Something that has a "symbol" like a normal atom but represents something else
-// May have an unknown composition like R, or a known structure like Ph
+use crate::{ids::BondId, traits::MolMap};
+
+new_key_type! {
+    /// An ID corresponding to a specific pseudoatom entity in a `MolMap`.
+    pub struct PseudoatomId;
+}
+
+/// The core data of a pseudoatom entity.
+///
+/// A pseudoatom is something that has a "symbol" like a normal atom but
+/// represents something else.
+/// It may have an unknown composition like R, or a known structure like Ph.
 #[derive(Debug)]
 pub(crate) struct Pseudoatom {
     pub(crate) symbol: String,
@@ -25,6 +35,7 @@ impl Pseudoatom {
     }
 }
 
+/// An immutable view over a specific pseudoatom entity in a specific `MolMap`.
 #[derive(Clone, Copy)]
 pub struct PseudoatomView<'a, M: MolMap> {
     pub molmap: &'a M,
@@ -51,6 +62,7 @@ impl<'a, M: MolMap> PseudoatomView<'a, M> {
     }
 }
 
+/// A mutable view over a specific pseudoatom entity in a specific `MolMap`.
 pub struct PseudoatomViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: PseudoatomId,

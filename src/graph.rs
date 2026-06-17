@@ -6,13 +6,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use slotmap::{SlotMap, basic::Iter};
-
-use std::{fmt::Debug, hash::RandomState};
+use slotmap::SlotMap;
 
 use crate::{
-    Element, MolMap, MolMapError, MolMapResult, bond::BondType, entities::*, id::*,
-    substituent::SubstituentCentre,
+    BondType, Element,
+    entities::{bond::BondingPartner, substituent::SubstituentCentre, *},
+    ids::*,
 };
 
 /// An arena-like data structure to represent a set of chemical entities,

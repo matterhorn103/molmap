@@ -6,7 +6,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{AtomId, Atomlike, BondId, SubstituentId, Fundamental, MolMap, MoleculeId, PseudoatomId};
+use slotmap::new_key_type;
+
+use crate::{
+    ids::{Atomlike, BondId, Fundamental},
+    traits::MolMap,
+};
+
+new_key_type! {
+    /// An ID corresponding to a specific substituent entity in a `MolMap`.
+    pub struct SubstituentId;
+}
 
 #[derive(Debug)]
 pub(crate) enum SubstituentCentre {
@@ -22,14 +32,16 @@ impl Default for SubstituentCentre {
     }
 }
 
-// Substituents are the smallest grouping in a MolMap
-// Substituents are conceptually equivalent to a non-hydrogen atom and "its" implicit
-// hydrogen atoms in SMILES or in packages that work that way,
-// or to the groups drawn together without explicit bonds in a skeletal formula
-// e.g. –OH, –COOH, –CH3
-// Substituents have an internal structure of Atoms, Pseudoatoms, and Bonds
-// Substituents generally indicate one or more centres to which bonds can be made,
-// but occasionally bonds are made to a substituent as a whole.
+/// The core data of a substituent entity.
+///
+/// Substituents are the smallest grouping in a MolMap
+/// Substituents are conceptually equivalent to a non-hydrogen atom and "its" implicit
+/// hydrogen atoms in SMILES or in packages that work that way,
+/// or to the groups drawn together without explicit bonds in a skeletal formula
+/// e.g. –OH, –COOH, –CH3
+/// Substituents have an internal structure of Atoms, Pseudoatoms, and Bonds
+/// Substituents generally indicate one or more centres to which bonds can be made,
+/// but occasionally bonds are made to a substituent as a whole.
 #[derive(Debug)]
 pub(crate) struct Substituent {
     pub(crate) centre: SubstituentCentre,
@@ -45,6 +57,7 @@ impl Substituent {
     }
 }
 
+/// An immutable view over a specific substituent entity in a specific `MolMap`.
 #[derive(Clone, Copy)]
 pub struct SubstituentView<'a, M: MolMap> {
     pub molmap: &'a M,
@@ -63,6 +76,7 @@ impl<'a, M: MolMap> SubstituentView<'a, M> {
     }
 }
 
+/// A mutable view over a specific substituent entity in a specific `MolMap`.
 pub struct SubstituentViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: SubstituentId,
@@ -83,6 +97,10 @@ impl<'a, M: MolMap> SubstituentViewMut<'a, M> {
     }
 
     fn core(&mut self) -> &mut Substituent {
-        self.molmap.core_mut().substituents.get_mut(self.id).unwrap()
+        self.molmap
+            .core_mut()
+            .substituents
+            .get_mut(self.id)
+            .unwrap()
     }
 }
