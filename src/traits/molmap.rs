@@ -135,7 +135,6 @@ pub trait MolMap: Debug + Default {
         match bondable {
             BondableId::Atom(id) => self.contains_atom(id),
             BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            BondableId::Substituent(id) => self.contains_substituent(id),
         }
     }
 

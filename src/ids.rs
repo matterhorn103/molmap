@@ -96,15 +96,11 @@ impl From<MoleculeId> for CollectionId {
 }
 
 /// An ID of an entity that can form bonds.
-///
-/// The actual entities that bonds connect are represented by [`crate::entities::bond::BondingPartner`],
-/// which is more restrictive.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum BondableId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
     //Bond(BondId),
-    Substituent(SubstituentId),
 }
 
 impl From<AtomId> for BondableId {
@@ -116,12 +112,6 @@ impl From<AtomId> for BondableId {
 impl From<PseudoatomId> for BondableId {
     fn from(id: PseudoatomId) -> Self {
         BondableId::Pseudoatom(id)
-    }
-}
-
-impl From<SubstituentId> for BondableId {
-    fn from(id: SubstituentId) -> Self {
-        BondableId::Substituent(id)
     }
 }
 
@@ -248,20 +238,9 @@ impl From<BondableId> for EntityId {
             BondableId::Atom(id) => EntityId::Atom(id),
             BondableId::Pseudoatom(id) => EntityId::Pseudoatom(id),
             //Bondable::Bond(id) => Entity::Bond(id),
-            BondableId::Substituent(id) => EntityId::Substituent(id),
         }
     }
 }
-
-//impl From<BondingPartner> for Entity {
-//    fn from(partner: BondingPartner) -> Self {
-//        match partner {
-//            BondingPartner::Atom(id) => Entity::Atom(id),
-//            BondingPartner::Pseudoatom(id) => Entity::Pseudoatom(id),
-//            BondingPartner::AmbiguouslyBondingSubstituent(id) => Entity::Substituent(id),
-//        }
-//    }
-//}
 
 impl From<AnchorId> for EntityId {
     fn from(anchor: AnchorId) -> Self {

@@ -9,7 +9,7 @@
 use slotmap::new_key_type;
 
 use crate::{
-    ids::{AtomId, AtomlikeId, PseudoatomId, SubstituentId},
+    ids::{AtomId, AtomlikeId, BondableId, PseudoatomId, SubstituentId},
     traits::MolMap,
 };
 
@@ -27,53 +27,17 @@ pub enum BondType {
     Ionic,
 }
 
-/// The endpoints of bonds.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum BondingPartner {
-    Atom(AtomId),
-    Pseudoatom(PseudoatomId),
-    // BondingSystem(BondingSystemId),  // future
-    AmbiguouslyBondingSubstituent(SubstituentId),
-}
-
-impl From<AtomId> for BondingPartner {
-    fn from(id: AtomId) -> Self {
-        BondingPartner::Atom(id)
-    }
-}
-
-impl From<PseudoatomId> for BondingPartner {
-    fn from(id: PseudoatomId) -> Self {
-        BondingPartner::Pseudoatom(id)
-    }
-}
-// Don't implement From with SubstituentId - it should be checked
-
-impl From<AtomlikeId> for BondingPartner {
-    fn from(atomlike: AtomlikeId) -> Self {
-        match atomlike {
-            AtomlikeId::Atom(id) => BondingPartner::Atom(id),
-            AtomlikeId::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
-        }
-    }
-}
-
 /// The core data of a bond entity.
 #[derive(Debug)]
 pub(crate) struct Bond {
     pub(crate) bond_type: BondType,
     pub(crate) order: f32,
-    pub(crate) start: BondingPartner,
-    pub(crate) end: BondingPartner,
+    pub(crate) start: BondableId,
+    pub(crate) end: BondableId,
 }
 
 impl Bond {
-    pub(crate) fn new(
-        bond_type: BondType,
-        order: f32,
-        start: BondingPartner,
-        end: BondingPartner,
-    ) -> Self {
+    pub(crate) fn new(bond_type: BondType, order: f32, start: BondableId, end: BondableId) -> Self {
         Self {
             bond_type,
             order,
@@ -110,7 +74,7 @@ impl<'a, M: MolMap> BondView<'a, M> {
         self.core().order
     }
 
-    pub fn partners(&self) -> [BondingPartner; 2] {
+    pub fn partners(&self) -> [BondableId; 2] {
         let inner = self.core();
         [inner.start, inner.end]
     }

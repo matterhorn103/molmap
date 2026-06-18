@@ -10,7 +10,7 @@ use slotmap::SlotMap;
 
 use crate::{
     BondType, Element,
-    entities::{bond::BondingPartner, substituent::SubstituentCentre, *},
+    entities::{substituent::SubstituentCentre, *},
     ids::*,
 };
 
@@ -140,7 +140,6 @@ impl MolGraph {
         match bondable {
             BondableId::Atom(id) => self.contains_atom(id),
             BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            BondableId::Substituent(id) => self.contains_substituent(id),
         }
     }
 
@@ -173,24 +172,14 @@ impl MolGraph {
     ///
     /// Panics if either of `start` and `end` are invalid.
     pub(crate) fn add_bond(&mut self, start: BondableId, end: BondableId) -> BondId {
-        let start = self.convert_bondable(start);
-        let end = self.convert_bondable(end);
         let bond_id = self
             .bonds
             .insert(Bond::new(BondType::Covalent, 1.0, start, end));
         for partner in [start, end] {
             match partner {
-                BondingPartner::Atom(id) => self.atoms.get_mut(id).unwrap().bonds.push(bond_id),
-                BondingPartner::Pseudoatom(id) => {
+                BondableId::Atom(id) => self.atoms.get_mut(id).unwrap().bonds.push(bond_id),
+                BondableId::Pseudoatom(id) => {
                     self.pseudoatoms.get_mut(id).unwrap().bonds.push(bond_id)
-                }
-                BondingPartner::AmbiguouslyBondingSubstituent(id) => {
-                    let SubstituentCentre::Ambiguous(bonds) =
-                        &mut self.substituents.get_mut(id).unwrap().centre
-                    else {
-                        unreachable!("Already know it's ambiguous")
-                    };
-                    bonds.push(bond_id);
                 }
             }
         }
@@ -199,11 +188,11 @@ impl MolGraph {
 
     /// Adds an empty substituent to the map.
     ///
-    /// The centre of the new substituent is ambiguous, so if it will have a
-    /// centre added to it subsequently, prefer `add_substituent_with_centre()`.
+    /// If the atomlike that is going to be the substituent's centre already
+    /// exists, prefer `add_substituent_with_centre()`.
     pub(crate) fn add_substituent(&mut self) -> SubstituentId {
         self.substituents.insert(Substituent {
-            centre: SubstituentCentre::Ambiguous(Vec::new()),
+            centre: SubstituentCentre::None,
             members: Vec::new(),
         })
     }
@@ -212,10 +201,8 @@ impl MolGraph {
     ///
     /// Note that this method will not fail, even if `centre` is an invalid ID.
     pub(crate) fn add_substituent_with_centre(&mut self, centre: AtomlikeId) -> SubstituentId {
-        self.substituents.insert(Substituent {
-            centre: SubstituentCentre::Single(centre),
-            members: vec![centre.into()],
-        })
+        self.substituents
+            .insert(Substituent::new(centre, &[centre.into()]))
     }
 
     /// Adds an empty molecule to the map.
@@ -263,7 +250,7 @@ impl MolGraph {
     ///
     /// If the fundamental is an atomlike and is the centre of the substituent,
     /// the centre is adjusted accordingly; if it is the lone centre, the
-    /// substituent's centre becomes ambiguous. If it is one of two centres,
+    /// substituent becomes centreless. If it is one of two centres,
     /// however, the centre remains `SubstituentCentre::Multiple` rather than
     /// becoming `Single`.
     ///
@@ -288,11 +275,11 @@ impl MolGraph {
         // substituent (or one of them).
         // Is so, adjust the centres of the substituent accordingly
         match &mut sub.centre {
-            SubstituentCentre::Ambiguous(_) => (),
+            SubstituentCentre::None => (),
             SubstituentCentre::Single(atomlike) => {
                 if FundamentalId::from(*atomlike) == fundamental {
-                    // Becomes an ambiguous centre
-                    sub.centre = SubstituentCentre::default()
+                    // No longer has a centre
+                    sub.centre = SubstituentCentre::None
                 }
             }
             SubstituentCentre::Multiple(atomlikes) => {
@@ -390,7 +377,7 @@ impl MolGraph {
         if let Some(bond) = self.bonds.remove(id) {
             for bonding_partner in [bond.start, bond.end] {
                 match bonding_partner {
-                    BondingPartner::Atom(atom_id) => {
+                    BondableId::Atom(atom_id) => {
                         let mut atom = self
                             .atoms
                             .get_mut(atom_id)
@@ -400,7 +387,7 @@ impl MolGraph {
                         );
                         atom.bonds.remove(pos);
                     }
-                    BondingPartner::Pseudoatom(pseudoatom_id) => {
+                    BondableId::Pseudoatom(pseudoatom_id) => {
                         let mut pseudoatom = self
                             .pseudoatoms
                             .get_mut(pseudoatom_id)
@@ -410,7 +397,6 @@ impl MolGraph {
                         );
                         pseudoatom.bonds.remove(pos);
                     }
-                    BondingPartner::AmbiguouslyBondingSubstituent(substituent_id) => todo!(),
                 }
             }
             // Remove from any collections
@@ -451,41 +437,6 @@ impl MolGraph {
             }
         }
         self.molecules.remove(id);
-    }
-
-    /// Gets the actual bonding partner that a `Bondable` refers to.
-    ///
-    /// Substituents generally form bonds from a central atom or pseudoatom, but they might have no
-    /// specified centre, or they might have multiple centres.
-    /// In the first case, the bond goes to the substituent as a whole; in the second case the first
-    /// centre in `centres` is used for the new bond.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `bondable` is an invalid `Substituent`.
-    ///
-    /// For an `Atom` or `Pseudoatom` the ID is simply wrapped in `BondingPartner`
-    /// with no checking of validity, so it will never fail.
-    fn convert_bondable(&self, bondable: BondableId) -> BondingPartner {
-        match bondable {
-            BondableId::Atom(id) => BondingPartner::Atom(id),
-            BondableId::Pseudoatom(id) => BondingPartner::Pseudoatom(id),
-            BondableId::Substituent(id) => {
-                // Get the substituent's data, panics if ID invalid
-                let substituent = self.substituents.get(id).unwrap();
-                // Use the first centre if any specified, the entire substituent if not
-                match &substituent.centre {
-                    substituent::SubstituentCentre::Ambiguous(_) => {
-                        BondingPartner::AmbiguouslyBondingSubstituent(id)
-                    }
-                    substituent::SubstituentCentre::Single(centre) => (*centre).into(),
-                    substituent::SubstituentCentre::Multiple(centres) => (*centres
-                        .first()
-                        .expect("Will always have at least one centre"))
-                    .into(),
-                }
-            }
-        }
     }
 
     /// Determines the substituent that contains the atom, pseudoatom, or bond, if any.

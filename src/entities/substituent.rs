@@ -21,16 +21,9 @@ new_key_type! {
 
 #[derive(Debug, Clone)]
 pub enum SubstituentCentre {
-    Ambiguous(Vec<BondId>),
+    None,
     Single(AtomlikeId),
-    Multiple(Vec<AtomlikeId>),
-}
-
-impl Default for SubstituentCentre {
-    /// Creates an ambiguous centre with an empty vector of bonds.
-    fn default() -> Self {
-        SubstituentCentre::Ambiguous(Vec::new())
-    }
+    Multiple(Box<Vec<AtomlikeId>>),
 }
 
 /// The core data of a substituent entity.
@@ -50,9 +43,9 @@ pub(crate) struct Substituent {
 }
 
 impl Substituent {
-    pub(crate) fn new(members: &[FundamentalId]) -> Self {
+    pub(crate) fn new(centre: AtomlikeId, members: &[FundamentalId]) -> Self {
         Self {
-            centre: SubstituentCentre::default(),
+            centre: SubstituentCentre::Single(centre),
             members: members.to_vec(),
         }
     }
@@ -160,7 +153,7 @@ impl<'a, M: MolMap> SubstituentViewMut<'a, M> {
         };
         // Check that there aren't already bonds to the current centre
         let already_bonded = match self.as_ref().centre().clone() {
-            SubstituentCentre::Ambiguous(bond_ids) => !bond_ids.is_empty(),
+            SubstituentCentre::None => false,
             SubstituentCentre::Single(atomlike_id) => atomlike_has_bonds(atomlike_id),
             SubstituentCentre::Multiple(atomlike_ids) => {
                 atomlike_ids.into_iter().any(atomlike_has_bonds)
