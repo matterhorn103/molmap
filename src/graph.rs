@@ -214,6 +214,8 @@ impl MolGraph {
 
     /// Adds the atom, pseudoatom, or bond to the substituent.
     ///
+    /// Returns whether the fundamental was newly inserted.
+    ///
     /// This method should only ever be used with fundamentals that do not already
     /// belong to a substituent.
     ///
@@ -221,16 +223,23 @@ impl MolGraph {
     ///
     /// Panics if `substituent` is invalid, but is unaffected if `fundamental` is
     /// invalid.
-    pub(crate) fn add_to_substituent(
+    pub(crate) fn insert_into_substituent(
         &mut self,
         substituent: SubstituentId,
         fundamental: FundamentalId,
-    ) {
+    ) -> bool {
         let sub = self.substituents.get_mut(substituent).unwrap();
-        sub.members.push(fundamental);
+        if sub.members.contains(&fundamental) {
+            sub.members.push(fundamental);
+            false
+        } else {
+            true
+        }
     }
 
     /// Adds the atom, pseudoatom, or bond to the molecule.
+    ///
+    /// Returns whether the fundamental was newly inserted.
     ///
     /// This method should only ever be used with fundamentals that do not already
     /// belong to a molecule.
@@ -239,14 +248,25 @@ impl MolGraph {
     ///
     /// Panics if `molecule` is invalid, but is unaffected if `fundamental` is
     /// invalid.
-    pub(crate) fn add_to_molecule(&mut self, molecule: MoleculeId, fundamental: FundamentalId) {
+    pub(crate) fn insert_into_molecule(
+        &mut self,
+        molecule: MoleculeId,
+        fundamental: FundamentalId,
+    ) -> bool {
         let mol = self.molecules.get_mut(molecule).unwrap();
-        mol.members.push(fundamental);
+        if mol.members.contains(&fundamental) {
+            mol.members.push(fundamental);
+            false
+        } else {
+            true
+        }
     }
 
     // Methods to remove entities from collections
 
     /// Removes the atom, pseudoatom, or bond from the substituent.
+    ///
+    /// Returns whether the fundamental was a member of the substituent.
     ///
     /// If the fundamental is an atomlike and is the centre of the substituent,
     /// the centre is adjusted accordingly; if it is the lone centre, the
@@ -256,9 +276,6 @@ impl MolGraph {
     ///
     /// The substituent continues to exist even if empty.
     ///
-    /// If the fundamental is invalid or not a member of the substituent, this
-    /// simply has no effect.
-    ///
     /// # Panics
     ///
     /// Panics if `substituent` is invalid.
@@ -266,10 +283,12 @@ impl MolGraph {
         &mut self,
         substituent: SubstituentId,
         fundamental: FundamentalId,
-    ) {
+    ) -> bool {
         let sub = self.substituents.get_mut(substituent).unwrap();
         if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
             sub.members.swap_remove(index);
+        } else {
+            return false;
         }
         // If fundamental is an atomlike, we might be removing the centre of the
         // substituent (or one of them).
@@ -294,12 +313,12 @@ impl MolGraph {
                 }
             }
         }
+        true
     }
 
     /// Removes the atom, pseudoatom, or bond from the molecule.
     ///
-    /// If the fundamental is invalid or not a member of the molecule, this simply
-    /// has no effect.
+    /// Returns whether the fundamental was a member of the molecule.
     ///
     /// The molecule continues to exist even if empty.
     ///
@@ -310,16 +329,20 @@ impl MolGraph {
         &mut self,
         molecule: MoleculeId,
         fundamental: FundamentalId,
-    ) {
+    ) -> bool {
         let mol = self.molecules.get_mut(molecule).unwrap();
         if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
             mol.members.swap_remove(index);
+            true
+        } else {
+            false
         }
     }
 
     // Methods to remove entities entirely
 
     /// Removes an atom from the map, as well as any bonds to it.
+    ///
     /// Returns whether the atom was present in the map.
     ///
     /// This is infallible – if the atom is not in the map, nothing changes.
@@ -334,16 +357,17 @@ impl MolGraph {
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
-            self.remove_from_substituent(frag_id, id.into())
+            self.remove_from_substituent(frag_id, id.into());
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
-            self.remove_from_molecule(mol_id, id.into())
+            self.remove_from_molecule(mol_id, id.into());
         }
         // Now we can safely remove the atom itself without leaving dangling bonds
         self.atoms.remove(id).is_some() // Should always be `true`
     }
 
     /// Removes a pseudoatom from the map, as well as any bonds to it.
+    ///
     /// Returns whether the pseudoatom was present in the map.
     ///
     /// This is infallible – if the pseudoatom is not in the map, nothing changes.
@@ -358,16 +382,17 @@ impl MolGraph {
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
-            self.remove_from_substituent(frag_id, id.into())
+            self.remove_from_substituent(frag_id, id.into());
         }
         if let Some(mol_id) = self.parent_molecule(id.into()) {
-            self.remove_from_molecule(mol_id, id.into())
+            self.remove_from_molecule(mol_id, id.into());
         }
         // Now we can safely remove the pseudoatom itself without leaving dangling bonds
         self.pseudoatoms.remove(id).is_some()
     }
 
     /// Removes a bond from the map (but not its bonding partners).
+    ///
     /// Returns whether the bond was present in the map.
     ///
     /// If the bond is not in the map, nothing changes.
@@ -404,10 +429,10 @@ impl MolGraph {
             }
             // Remove from any collections
             if let Some(frag_id) = self.parent_substituent(id.into()) {
-                self.remove_from_substituent(frag_id, id.into())
+                self.remove_from_substituent(frag_id, id.into());
             }
             if let Some(mol_id) = self.parent_molecule(id.into()) {
-                self.remove_from_molecule(mol_id, id.into())
+                self.remove_from_molecule(mol_id, id.into());
             }
             true
         } else {
@@ -416,6 +441,7 @@ impl MolGraph {
     }
 
     /// Removes a substituent from the map, as well as all of its members.
+    ///
     /// Returns whether the substituent was present in the map.
     ///
     /// This is infallible – if the substituent is not in the map, nothing changes.
@@ -441,6 +467,7 @@ impl MolGraph {
     }
 
     /// Removes a molecule from the map, as well as all of its members.
+    ///
     /// Returns whether the molecule was present in the map.
     ///
     /// This is infallible – if the molecule is not in the map, nothing changes.
