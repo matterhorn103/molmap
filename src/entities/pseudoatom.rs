@@ -98,6 +98,6 @@ impl<'a, M: MolMap> PseudoatomViewMut<'a, M> {
 
     /// Removes the pseudoatom from the map, as well as any bonds to it.
     pub fn remove(mut self) {
-        self.molmap.core_mut().remove_pseudoatom(self.id);
+        self.molmap.core_mut().delete_pseudoatom(self.id);
     }
 }

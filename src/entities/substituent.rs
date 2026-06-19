@@ -171,6 +171,6 @@ impl<'a, M: MolMap> SubstituentViewMut<'a, M> {
 
     /// Removes the substituent from the map, as well as all of its members.
     pub fn remove(mut self) {
-        self.molmap.core_mut().remove_substituent(self.id);
+        self.molmap.core_mut().delete_substituent(self.id);
     }
 }

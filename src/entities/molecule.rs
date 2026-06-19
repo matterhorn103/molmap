@@ -88,6 +88,6 @@ impl<'a, M: MolMap> MoleculeViewMut<'a, M> {
 
     /// Removes the molecule from the map, as well as all of its members.
     pub fn remove(mut self) {
-        self.molmap.core_mut().remove_molecule(self.id);
+        self.molmap.core_mut().delete_molecule(self.id);
     }
 }

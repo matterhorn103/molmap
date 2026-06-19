@@ -320,16 +320,17 @@ impl MolGraph {
     // Methods to remove entities entirely
 
     /// Removes an atom from the map, as well as any bonds to it.
+    /// Returns whether the atom was present in the map.
     ///
-    /// This is infallible – if the atom is not in the map, nothing happens.
-    pub(crate) fn remove_atom(&mut self, id: AtomId) {
+    /// This is infallible – if the atom is not in the map, nothing changes.
+    pub(crate) fn delete_atom(&mut self, id: AtomId) -> bool {
         if !self.contains_atom(id) {
-            return;
+            return false;
         }
         // Make sure we always remove bonds first
         let bonds = self.atoms.get(id).unwrap().bonds.clone();
         for bond_id in bonds {
-            self.remove_bond(bond_id);
+            self.delete_bond(bond_id);
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
@@ -339,20 +340,21 @@ impl MolGraph {
             self.remove_from_molecule(mol_id, id.into())
         }
         // Now we can safely remove the atom itself without leaving dangling bonds
-        self.atoms.remove(id);
+        self.atoms.remove(id).is_some() // Should always be `true`
     }
 
     /// Removes a pseudoatom from the map, as well as any bonds to it.
+    /// Returns whether the pseudoatom was present in the map.
     ///
-    /// This is infallible – if the pseudoatom is not in the map, nothing happens.
-    pub(crate) fn remove_pseudoatom(&mut self, id: PseudoatomId) {
+    /// This is infallible – if the pseudoatom is not in the map, nothing changes.
+    pub(crate) fn delete_pseudoatom(&mut self, id: PseudoatomId) -> bool {
         if !self.contains_pseudoatom(id) {
-            return;
+            return false;
         }
         // Make sure we always remove bonds first
         let bonds = self.pseudoatoms.get(id).unwrap().bonds.clone();
         for bond_id in bonds {
-            self.remove_bond(bond_id);
+            self.delete_bond(bond_id);
         }
         // Remove from any collections
         if let Some(frag_id) = self.parent_substituent(id.into()) {
@@ -362,18 +364,19 @@ impl MolGraph {
             self.remove_from_molecule(mol_id, id.into())
         }
         // Now we can safely remove the pseudoatom itself without leaving dangling bonds
-        self.pseudoatoms.remove(id);
+        self.pseudoatoms.remove(id).is_some()
     }
 
     /// Removes a bond from the map (but not its bonding partners).
+    /// Returns whether the bond was present in the map.
     ///
-    /// If the bond is not in the map, nothing happens.
+    /// If the bond is not in the map, nothing changes.
     ///
     /// # Panics
     ///
     /// Panics if either of the bond's bonding partners does not exist (which
     /// should never be the case – bonds are last in, first out).
-    pub(crate) fn remove_bond(&mut self, id: BondId) {
+    pub(crate) fn delete_bond(&mut self, id: BondId) -> bool {
         if let Some(bond) = self.bonds.remove(id) {
             for bonding_partner in [bond.start, bond.end] {
                 match bonding_partner {
@@ -406,37 +409,60 @@ impl MolGraph {
             if let Some(mol_id) = self.parent_molecule(id.into()) {
                 self.remove_from_molecule(mol_id, id.into())
             }
+            true
+        } else {
+            false
         }
     }
 
     /// Removes a substituent from the map, as well as all of its members.
+    /// Returns whether the substituent was present in the map.
     ///
-    /// This is infallible – if the substituent is not in the map, nothing happens.
-    pub(crate) fn remove_substituent(&mut self, id: SubstituentId) {
+    /// This is infallible – if the substituent is not in the map, nothing changes.
+    pub(crate) fn delete_substituent(&mut self, id: SubstituentId) -> bool {
+        if !self.contains_substituent(id) {
+            return false;
+        };
         let members = self.substituents.get(id).unwrap().members.clone();
         for member in members {
             match member {
-                FundamentalId::Atom(id) => self.remove_atom(id),
-                FundamentalId::Pseudoatom(id) => self.remove_pseudoatom(id),
-                FundamentalId::Bond(id) => self.remove_bond(id),
+                FundamentalId::Atom(id) => {
+                    self.delete_atom(id);
+                }
+                FundamentalId::Pseudoatom(id) => {
+                    self.delete_pseudoatom(id);
+                }
+                FundamentalId::Bond(id) => {
+                    self.delete_bond(id);
+                }
             }
         }
-        self.substituents.remove(id);
+        self.substituents.remove(id).is_some()
     }
 
     /// Removes a molecule from the map, as well as all of its members.
+    /// Returns whether the molecule was present in the map.
     ///
-    /// This is infallible – if the molecule is not in the map, nothing happens.
-    pub(crate) fn remove_molecule(&mut self, id: MoleculeId) {
+    /// This is infallible – if the molecule is not in the map, nothing changes.
+    pub(crate) fn delete_molecule(&mut self, id: MoleculeId) -> bool {
+        if !self.contains_molecule(id) {
+            return false;
+        };
         let members = self.molecules.get(id).unwrap().members.clone();
         for member in members {
             match member {
-                FundamentalId::Atom(id) => self.remove_atom(id),
-                FundamentalId::Pseudoatom(id) => self.remove_pseudoatom(id),
-                FundamentalId::Bond(id) => self.remove_bond(id),
+                FundamentalId::Atom(id) => {
+                    self.delete_atom(id);
+                }
+                FundamentalId::Pseudoatom(id) => {
+                    self.delete_pseudoatom(id);
+                }
+                FundamentalId::Bond(id) => {
+                    self.delete_bond(id);
+                }
             }
         }
-        self.molecules.remove(id);
+        self.molecules.remove(id).is_some()
     }
 
     /// Determines the substituent that contains the atom, pseudoatom, or bond, if any.
