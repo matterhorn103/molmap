@@ -122,7 +122,7 @@ impl<'a, M: MolMap> BondViewMut<'a, M> {
     }
 
     /// Removes the bond from the map (but not its bonding partners).
-    pub fn remove(mut self) {
+    pub fn delete(mut self) {
         self.molmap.core_mut().delete_bond(self.id);
     }
 }

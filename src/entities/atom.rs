@@ -97,7 +97,7 @@ impl<'a, M: MolMap> AtomViewMut<'a, M> {
     }
 
     /// Removes the atom from the map, as well as any bonds to it.
-    pub fn remove(mut self) {
+    pub fn delete(mut self) {
         self.molmap.core_mut().delete_atom(self.id);
     }
 }

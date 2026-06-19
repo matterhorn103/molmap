@@ -87,7 +87,7 @@ impl<'a, M: MolMap> MoleculeViewMut<'a, M> {
     // Public methods, which should consume the view
 
     /// Removes the molecule from the map, as well as all of its members.
-    pub fn remove(mut self) {
+    pub fn delete(mut self) {
         self.molmap.core_mut().delete_molecule(self.id);
     }
 }
