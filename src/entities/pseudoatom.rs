@@ -21,13 +21,13 @@ new_key_type! {
 /// represents something else.
 /// It may have an unknown composition like R, or a known structure like Ph.
 #[derive(Debug)]
-pub(crate) struct Pseudoatom {
-    pub(crate) symbol: String,
-    pub(crate) bonds: Vec<BondId>,
+pub struct Pseudoatom {
+    pub symbol: String,
+    pub bonds: Vec<BondId>,
 }
 
 impl Pseudoatom {
-    pub(crate) fn new(symbol: String) -> Self {
+    pub fn new(symbol: String) -> Self {
         Self {
             symbol,
             bonds: Vec::new(),

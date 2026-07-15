@@ -10,6 +10,23 @@ use std::fmt::Debug;
 
 use crate::{graph::MolGraph, ids::*, views::*};
 
+/// A trait implemented by all `MolMap` types to provide access to their core
+/// `MolGraph` without exposing a public interface to it.
+///
+/// The trait has visibility `pub` to match `MolMap`, but it should not be
+/// exposed publicly, hence the re-export in `crate::traits` is `pub(crate)`.
+///
+/// The use of this trait as a bound for `MolMap` makes it an example of the
+/// sealed trait pattern, see
+/// https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
+pub trait MolMapCore {
+    /// Returns the core molecular graph.
+    fn core(&self) -> &MolGraph;
+
+    /// Returns the core molecular graph in mutable form.
+    fn core_mut(&mut self) -> &mut MolGraph;
+}
+
 /// An arena-like data structure to represent a set of chemical entities, their
 /// properties, and the relationships between them, with or without spatial positions.
 ///
@@ -19,7 +36,9 @@ use crate::{graph::MolGraph, ids::*, views::*};
 /// 2. verifying an ID e.g. [`MolMap::contains_atom()`]
 /// 3. iterating over views of all of a given kind of entity e.g. [`MolMap::atoms()`]
 /// 4. iterating over all IDs of a given kind of entity e.g. [`MolMap::atom_ids()`]
-pub trait MolMap: Debug + Default {
+///
+/// This trait is sealed and is not intended for implementation outside of `molmap`.
+pub trait MolMap: Sized + MolMapCore {
     /// Creates an empty `MolMap`.
     ///
     /// As the constituent `SlotMap`s are created with an initial capacity of 0, reallocations
@@ -48,14 +67,6 @@ pub trait MolMap: Debug + Default {
     fn with_capacity(n: usize) -> Self {
         Self::with_capacities(n, n / 10, n, n / 3, (n / 100) + 1)
     }
-
-    /// Returns the core molecular graph (private).
-    #[allow(private_interfaces)]
-    fn core(&self) -> &MolGraph;
-
-    /// Returns the core molecular graph (private) in mutable form.
-    #[allow(private_interfaces)]
-    fn core_mut(&mut self) -> &mut MolGraph;
 
     // ID-related methods
     // These all just defer to the inner core struct

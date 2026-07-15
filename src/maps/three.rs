@@ -9,12 +9,29 @@
 use nalgebra::{Point, Point3};
 use slotmap::SecondaryMap;
 
-use crate::{Element, MolMap, graph::MolGraph, ids::*, traits::SpatialMolMap};
+use crate::{
+    Element, MolMap,
+    graph::MolGraph,
+    ids::*,
+    traits::{MolMapCore, SpatialMolMap},
+};
 
 #[derive(Debug, Default)]
 pub struct MolMap3 {
     pub(crate) core: MolGraph,
     pub(crate) atom_positions: SecondaryMap<AtomId, Point3<f64>>,
+}
+
+impl MolMapCore for MolMap3 {
+    #[inline]
+    fn core(&self) -> &MolGraph {
+        &self.core
+    }
+
+    #[inline]
+    fn core_mut(&mut self) -> &mut MolGraph {
+        &mut self.core
+    }
 }
 
 impl MolMap for MolMap3 {
@@ -23,14 +40,6 @@ impl MolMap for MolMap3 {
             core: MolGraph::new(),
             atom_positions: SecondaryMap::new(),
         }
-    }
-
-    fn core(&self) -> &MolGraph {
-        &self.core
-    }
-
-    fn core_mut(&mut self) -> &mut MolGraph {
-        &mut self.core
     }
 
     fn with_capacities(

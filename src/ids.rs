@@ -8,7 +8,6 @@
 
 // The entity ID types are defined in the corresponding entity modules; we
 // re-export them publicly here
-
 pub use crate::entities::atom::AtomId;
 pub use crate::entities::bond::BondId;
 pub use crate::entities::molecule::MoleculeId;

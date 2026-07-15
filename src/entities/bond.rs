@@ -29,15 +29,15 @@ pub enum BondType {
 
 /// The core data of a bond entity.
 #[derive(Debug)]
-pub(crate) struct Bond {
-    pub(crate) bond_type: BondType,
-    pub(crate) order: f32,
-    pub(crate) start: BondableId,
-    pub(crate) end: BondableId,
+pub struct Bond {
+    pub bond_type: BondType,
+    pub order: f32,
+    pub start: BondableId,
+    pub end: BondableId,
 }
 
 impl Bond {
-    pub(crate) fn new(bond_type: BondType, order: f32, start: BondableId, end: BondableId) -> Self {
+    pub fn new(bond_type: BondType, order: f32, start: BondableId, end: BondableId) -> Self {
         Self {
             bond_type,
             order,

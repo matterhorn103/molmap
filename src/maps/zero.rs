@@ -10,13 +10,25 @@ use crate::{
     Element, MolMapError, MolMapResult,
     graph::MolGraph,
     ids::{AtomId, AtomlikeId, BondId, BondableId, MoleculeId, PseudoatomId, SubstituentId},
-    traits::MolMap,
+    traits::{MolMap, MolMapCore},
 };
 
 /// A pure molecular graph, without spatial positions.
 #[derive(Debug, Default)]
 pub struct MolMap0 {
     pub(crate) core: MolGraph,
+}
+
+impl MolMapCore for MolMap0 {
+    #[inline]
+    fn core(&self) -> &MolGraph {
+        &self.core
+    }
+
+    #[inline]
+    fn core_mut(&mut self) -> &mut MolGraph {
+        &mut self.core
+    }
 }
 
 impl MolMap for MolMap0 {
@@ -36,18 +48,6 @@ impl MolMap for MolMap0 {
         Self {
             core: MolGraph::with_capacities(atoms, pseudoatoms, bonds, substituents, molecules),
         }
-    }
-
-    #[allow(private_interfaces)]
-    #[inline]
-    fn core(&self) -> &MolGraph {
-        &self.core
-    }
-
-    #[allow(private_interfaces)]
-    #[inline]
-    fn core_mut(&mut self) -> &mut MolGraph {
-        &mut self.core
     }
 }
 

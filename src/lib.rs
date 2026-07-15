@@ -8,6 +8,9 @@
 
 #![allow(unused)]
 
+// Re-export nalgebra to make it easier for others to use
+pub use nalgebra;
+
 mod element;
 mod entities;
 mod error;
@@ -21,5 +24,5 @@ pub mod views;
 pub use element::Element;
 pub use entities::bond::BondType;
 pub use error::{MolMapError, MolMapResult};
-pub use maps::zero::MolMap0;
-pub use traits::MolMap;
+pub use maps::{MolMap0, MolMap2, MolMap3};
+pub use traits::{MolMap, SpatialMolMap};

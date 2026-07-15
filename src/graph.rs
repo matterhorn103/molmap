@@ -17,7 +17,9 @@ use crate::{
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
 ///
-/// This forms the core of all `MolMap` types, but is not public.
+/// A `MolGraph` forms the core of all `MolMap` types, but the type is not meant
+/// for external use. Its `pub` visibility is necessary to match [`MolMapCore`].
+///
 /// [`MolMap0`] is the `MolMap` type that provides a molecular graph for users.
 ///
 /// In general, the methods of `MolGraph` should be small in scope and efficient
@@ -25,7 +27,7 @@ use crate::{
 /// The methods should also do as little checking and validation as possible, with
 /// panicking preferred - the higher maps are then responsible for careful usage.
 #[derive(Debug, Default)]
-pub(crate) struct MolGraph {
+pub struct MolGraph {
     pub(crate) atoms: SlotMap<AtomId, Atom>,
     pub(crate) pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,
     pub(crate) bonds: SlotMap<BondId, Bond>,
