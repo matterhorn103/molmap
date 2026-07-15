@@ -28,14 +28,18 @@ pub enum SubstituentCentre {
 
 /// The core data of a substituent entity.
 ///
-/// Substituents are the smallest grouping in a MolMap
-/// Substituents are conceptually equivalent to a non-hydrogen atom and "its" implicit
-/// hydrogen atoms in SMILES or in packages that work that way,
-/// or to the groups drawn together without explicit bonds in a skeletal formula
-/// e.g. –OH, –COOH, –CH3
-/// Substituents have an internal structure of Atoms, Pseudoatoms, and Bonds
-/// Substituents generally indicate one or more centres to which bonds can be made,
-/// but occasionally bonds are made to a substituent as a whole.
+/// Substituents are the smallest collection in a `MolMap` and represent the units
+/// that chemists tend to actually think, rather than individual atoms. For example,
+/// a substituent is conceptually equivalent to:
+/// - a non-hydrogen atom and "its" implicit hydrogen atoms in SMILES or in packages
+/// that work that way (all hydrogen atoms are explicit in a MolMap)
+/// - the carbon atom and hydrogen atoms at a vertex in a skeletal formula
+/// - atoms drawn together as a group without explicit bonds in a skeletal formula
+///   e.g. –OH, –COOH, –CH₃
+///
+/// Substituents generally indicate one or more centres, so that bonds can be made
+/// "to" the centre. This allows molecules to be built up conveniently by adding and
+/// connecting substituents rather than individual atoms.
 #[derive(Debug)]
 pub(crate) struct Substituent {
     pub(crate) centre: SubstituentCentre,
