@@ -35,6 +35,7 @@ pub struct MolGraph {
     pub(crate) molecules: SlotMap<MoleculeId, Molecule>,
 }
 
+/// Constructor methods.
 impl MolGraph {
     /// Creates a new, empty `MolGraph`.
     pub(crate) fn new() -> Self {
@@ -65,9 +66,8 @@ impl MolGraph {
     }
 }
 
+/// Methods for querying entity IDs.
 impl MolGraph {
-    // Methods to iterate over IDs
-
     /// Returns an iterator over all the IDs of all atoms in the map.
     pub(crate) fn atom_ids(&'_ self) -> impl Iterator<Item = AtomId> + '_ {
         self.atoms.keys()
@@ -92,8 +92,6 @@ impl MolGraph {
     pub(crate) fn molecule_ids(&'_ self) -> impl Iterator<Item = MoleculeId> + '_ {
         self.molecules.keys()
     }
-
-    // Methods to check the validity of IDs and entity enums
 
     /// Checks if the given ID is valid.
     pub(crate) fn contains_atom(&self, id: AtomId) -> bool {
@@ -120,7 +118,7 @@ impl MolGraph {
         self.molecules.contains_key(id)
     }
 
-    /// Checks if the given enum wraps a valid ID.
+    /// Checks if the map currently contains the atomlike with the given ID.
     pub(crate) fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
         match atomlike {
             AtomlikeId::Atom(id) => self.contains_atom(id),
@@ -128,7 +126,7 @@ impl MolGraph {
         }
     }
 
-    /// Checks if the given enum wraps a valid ID.
+    /// Checks if the map currently contains the fundamental with the given ID.
     pub(crate) fn contains_fundamental(&self, fundamental: FundamentalId) -> bool {
         match fundamental {
             FundamentalId::Atom(id) => self.contains_atom(id),
@@ -137,11 +135,19 @@ impl MolGraph {
         }
     }
 
-    /// Checks if the given enum wraps a valid ID.
+    /// Checks if the map currently contains the bondable with the given ID.
     pub(crate) fn contains_bondable(&self, bondable: BondableId) -> bool {
         match bondable {
             BondableId::Atom(id) => self.contains_atom(id),
             BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        }
+    }
+
+    /// Checks if the map currently contains the collection with the given ID.
+    pub(crate) fn contains_collection(&self, collection: CollectionId) -> bool {
+        match collection {
+            CollectionId::Substituent(id) => self.contains_substituent(id),
+            CollectionId::Molecule(id) => self.contains_molecule(id),
         }
     }
 
@@ -155,9 +161,10 @@ impl MolGraph {
             EntityId::Molecule(id) => self.contains_molecule(id),
         }
     }
+}
 
-    // Methods to add entities
-
+/// Methods for entity addition and deletion.
+impl MolGraph {
     /// Adds an atom to the map.
     pub(crate) fn add_atom(&mut self, element: Element) -> AtomId {
         self.atoms.insert(Atom::new(element))
@@ -211,137 +218,6 @@ impl MolGraph {
     pub(crate) fn add_molecule(&mut self) -> MoleculeId {
         self.molecules.insert(Molecule::new())
     }
-
-    // Methods to add entities to collections
-
-    /// Adds the atom, pseudoatom, or bond to the substituent.
-    ///
-    /// Returns whether the fundamental was newly inserted.
-    ///
-    /// This method should only ever be used with fundamentals that do not already
-    /// belong to a substituent.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `substituent` is invalid, but is unaffected if `fundamental` is
-    /// invalid.
-    pub(crate) fn insert_into_substituent(
-        &mut self,
-        substituent: SubstituentId,
-        fundamental: FundamentalId,
-    ) -> bool {
-        let sub = self.substituents.get_mut(substituent).unwrap();
-        if sub.members.contains(&fundamental) {
-            sub.members.push(fundamental);
-            false
-        } else {
-            true
-        }
-    }
-
-    /// Adds the atom, pseudoatom, or bond to the molecule.
-    ///
-    /// Returns whether the fundamental was newly inserted.
-    ///
-    /// This method should only ever be used with fundamentals that do not already
-    /// belong to a molecule.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `molecule` is invalid, but is unaffected if `fundamental` is
-    /// invalid.
-    pub(crate) fn insert_into_molecule(
-        &mut self,
-        molecule: MoleculeId,
-        fundamental: FundamentalId,
-    ) -> bool {
-        let mol = self.molecules.get_mut(molecule).unwrap();
-        if mol.members.contains(&fundamental) {
-            mol.members.push(fundamental);
-            false
-        } else {
-            true
-        }
-    }
-
-    // Methods to remove entities from collections
-
-    /// Removes the atom, pseudoatom, or bond from the substituent.
-    ///
-    /// Returns whether the fundamental was a member of the substituent.
-    ///
-    /// If the fundamental is an atomlike and is the centre of the substituent,
-    /// the centre is adjusted accordingly; if it is the lone centre, the
-    /// substituent becomes centreless. If it is one of two centres,
-    /// however, the centre remains `SubstituentCentre::Multiple` rather than
-    /// becoming `Single`.
-    ///
-    /// The substituent continues to exist even if empty.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `substituent` is invalid.
-    pub(crate) fn remove_from_substituent(
-        &mut self,
-        substituent: SubstituentId,
-        fundamental: FundamentalId,
-    ) -> bool {
-        let sub = self.substituents.get_mut(substituent).unwrap();
-        if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
-            sub.members.swap_remove(index);
-        } else {
-            return false;
-        }
-        // If fundamental is an atomlike, we might be removing the centre of the
-        // substituent (or one of them).
-        // Is so, adjust the centres of the substituent accordingly
-        match &mut sub.centre {
-            SubstituentCentre::None => (),
-            SubstituentCentre::Single(atomlike) => {
-                if FundamentalId::from(*atomlike) == fundamental {
-                    // No longer has a centre
-                    sub.centre = SubstituentCentre::None
-                }
-            }
-            SubstituentCentre::Multiple(atomlikes) => {
-                if let Some(atomlike) = match fundamental {
-                    FundamentalId::Bond(_) => None,
-                    FundamentalId::Atom(id) => Some(id.into()),
-                    FundamentalId::Pseudoatom(id) => Some(id.into()),
-                } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
-                {
-                    // We want to preserve order
-                    atomlikes.remove(index);
-                }
-            }
-        }
-        true
-    }
-
-    /// Removes the atom, pseudoatom, or bond from the molecule.
-    ///
-    /// Returns whether the fundamental was a member of the molecule.
-    ///
-    /// The molecule continues to exist even if empty.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `molecule` is invalid.
-    pub(crate) fn remove_from_molecule(
-        &mut self,
-        molecule: MoleculeId,
-        fundamental: FundamentalId,
-    ) -> bool {
-        let mol = self.molecules.get_mut(molecule).unwrap();
-        if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
-            mol.members.swap_remove(index);
-            true
-        } else {
-            false
-        }
-    }
-
-    // Methods to remove entities entirely
 
     /// Removes an atom from the map, as well as any bonds to it.
     ///
@@ -494,6 +370,308 @@ impl MolGraph {
         self.molecules.remove(id).is_some()
     }
 
+    /// Removes an atom or pseudoatom from the map.
+    ///
+    /// Returns whether the atomlike was present in the map.
+    ///
+    /// Bonds to the atom or pseudoatom are also deleted.
+    ///
+    /// If the atomlike is not in the map, nothing changes.
+    pub(crate) fn delete_atomlike(&mut self, atomlike: AtomlikeId) -> bool {
+        match atomlike {
+            AtomlikeId::Atom(id) => self.delete_atom(id),
+            AtomlikeId::Pseudoatom(id) => self.delete_pseudoatom(id),
+        }
+    }
+
+    /// Removes an atom, pseudoatom, or bond from the map.
+    ///
+    /// Returns whether the fundamental was present in the map.
+    ///
+    /// Bonds to an atom or pseudoatom are also deleted.
+    /// The bonding partners of a bond are not deleted.
+    ///
+    /// If the fundamental is not in the map, nothing changes.
+    pub(crate) fn delete_fundamental(&mut self, fundamental: FundamentalId) -> bool {
+        match fundamental {
+            FundamentalId::Atom(id) => self.delete_atom(id),
+            FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
+            FundamentalId::Bond(id) => self.delete_bond(id),
+        }
+    }
+
+    /// Removes a collection from the map, as well as all of its members.
+    ///
+    /// Returns whether the collection was present in the map.
+    ///
+    /// If the collection is not in the map, nothing changes.
+    pub(crate) fn delete_collection(&mut self, collection: CollectionId) -> bool {
+        match collection {
+            CollectionId::Substituent(id) => self.delete_substituent(id),
+            CollectionId::Molecule(id) => self.delete_molecule(id),
+        }
+    }
+}
+
+/// Methods to change collection membership.
+///
+/// Some of these methods are identical for all current collection types, but are not
+/// implemented using macros due to the likelihood that they will need to diverge in
+/// future.
+impl MolGraph {
+    /// Adds an atom, pseudoatom, or bond to a substituent.
+    ///
+    /// Returns whether the fundamental was newly inserted.
+    ///
+    /// This method should only ever be used with fundamentals that do not already
+    /// belong to a substituent.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `substituent` is invalid, but is unaffected if `fundamental` is
+    /// invalid.
+    pub(crate) fn insert_into_substituent(
+        &mut self,
+        substituent: SubstituentId,
+        fundamental: FundamentalId,
+    ) -> bool {
+        let sub = self.substituents.get_mut(substituent).unwrap();
+        if sub.members.contains(&fundamental) {
+            sub.members.push(fundamental);
+            false
+        } else {
+            true
+        }
+    }
+
+    /// Adds an atom, pseudoatom, or bond to a molecule.
+    ///
+    /// Returns whether the fundamental was newly inserted.
+    ///
+    /// This method should only ever be used with fundamentals that do not already
+    /// belong to a molecule.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `molecule` is invalid, but is unaffected if `fundamental` is
+    /// invalid.
+    pub(crate) fn insert_into_molecule(
+        &mut self,
+        molecule: MoleculeId,
+        fundamental: FundamentalId,
+    ) -> bool {
+        let mol = self.molecules.get_mut(molecule).unwrap();
+        if mol.members.contains(&fundamental) {
+            mol.members.push(fundamental);
+            false
+        } else {
+            true
+        }
+    }
+
+    /// Removes an atom, pseudoatom, or bond from a substituent.
+    ///
+    /// Returns whether the fundamental was a member of the substituent.
+    ///
+    /// If the fundamental is an atomlike and is the centre of the substituent,
+    /// the centre is adjusted accordingly; if it is the lone centre, the
+    /// substituent becomes centreless. If it is one of two centres,
+    /// however, the centre remains `SubstituentCentre::Multiple` rather than
+    /// becoming `Single`.
+    ///
+    /// The substituent continues to exist, even if empty, as does the removed
+    /// fundamental.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `substituent` is invalid.
+    pub(crate) fn remove_from_substituent(
+        &mut self,
+        substituent: SubstituentId,
+        fundamental: FundamentalId,
+    ) -> bool {
+        let sub = self.substituents.get_mut(substituent).unwrap();
+        if let Some(index) = sub.members.iter().position(|x| *x == fundamental) {
+            sub.members.swap_remove(index);
+        } else {
+            return false;
+        }
+        // If fundamental is an atomlike, we might be removing the centre of the
+        // substituent (or one of them).
+        // Is so, adjust the centres of the substituent accordingly
+        match &mut sub.centre {
+            SubstituentCentre::None => (),
+            SubstituentCentre::Single(atomlike) => {
+                if FundamentalId::from(*atomlike) == fundamental {
+                    // No longer has a centre
+                    sub.centre = SubstituentCentre::None
+                }
+            }
+            SubstituentCentre::Multiple(atomlikes) => {
+                if let Some(atomlike) = match fundamental {
+                    FundamentalId::Bond(_) => None,
+                    FundamentalId::Atom(id) => Some(id.into()),
+                    FundamentalId::Pseudoatom(id) => Some(id.into()),
+                } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
+                {
+                    // We want to preserve order
+                    atomlikes.remove(index);
+                }
+            }
+        }
+        true
+    }
+
+    /// Removes an atom, pseudoatom, or bond from a molecule.
+    ///
+    /// Returns whether the fundamental was a member of the molecule.
+    ///
+    /// The molecule continues to exist even if empty, as does the removed
+    /// fundamental.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `molecule` is invalid.
+    pub(crate) fn remove_from_molecule(
+        &mut self,
+        molecule: MoleculeId,
+        fundamental: FundamentalId,
+    ) -> bool {
+        let mol = self.molecules.get_mut(molecule).unwrap();
+        if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
+            mol.members.swap_remove(index);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Empties a substituent by removing all its members, returning an iterator over
+    /// the IDs of the former members.
+    ///
+    /// The substituent and all removed fundamentals continue to exist.
+    ///
+    /// After this operation, the substituent will be centreless.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the substituent is not in the map.
+    pub(crate) fn drain_substituent(
+        &mut self,
+        id: SubstituentId,
+    ) -> std::vec::Drain<'_, FundamentalId> {
+        let sub = self
+            .substituents
+            .get_mut(id)
+            .expect("Caller is required to ensure that the SubstituentId is valid");
+        sub.centre = SubstituentCentre::None;
+        sub.members.drain(..)
+    }
+
+    /// Empties a molecule by removing all its members, returning an iterator over
+    /// the IDs of the former members.
+    ///
+    /// The molecule and all removed fundamentals continue to exist.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the molecule is not in the map.
+    pub(crate) fn drain_molecule(&mut self, id: MoleculeId) -> std::vec::Drain<'_, FundamentalId> {
+        let mut mol = self
+            .molecules
+            .get_mut(id)
+            .expect("Caller is required to ensure that the MoleculeId is valid");
+        mol.members.drain(..)
+    }
+
+    /// Empties a substituent by deleting all its members.
+    ///
+    /// The substituent itself continues to exist, and will be centreless.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the substituent is not in the map.
+    pub(crate) fn clear_substituent(&mut self, id: SubstituentId) {
+        let sub = self
+            .substituents
+            .get_mut(id)
+            .expect("Caller is required to ensure that the SubstituentId is valid");
+        sub.centre = SubstituentCentre::None;
+        let former_members: Vec<FundamentalId> = sub.members.drain(..).collect();
+        // It's fine to delete in any order as if something isn't in the map any more
+        // (e.g. because it's a bond and one of its bonding partners was already deleted
+        // and thus it too was already deleted) then nothing changes when the deletion
+        // is attempted
+        for member in former_members {
+            match member {
+                FundamentalId::Atom(id) => self.delete_atom(id),
+                FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
+                FundamentalId::Bond(id) => self.delete_bond(id),
+            };
+        }
+    }
+
+    /// Empties a molecule by deleting all its members.
+    ///
+    /// The molecule itself continues to exist.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the molecule is not in the map.
+    pub(crate) fn clear_molecule(&mut self, id: MoleculeId) {
+        let mut mol = self
+            .molecules
+            .get_mut(id)
+            .expect("Caller is required to ensure that the MoleculeId is valid");
+        let former_members: Vec<FundamentalId> = mol.members.drain(..).collect();
+        // It's fine to delete in any order as if something isn't in the map any more
+        // (e.g. because it's a bond and one of its bonding partners was already deleted
+        // and thus it too was already deleted) then nothing changes when the deletion
+        // is attempted
+        for member in former_members {
+            match member {
+                FundamentalId::Atom(id) => self.delete_atom(id),
+                FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
+                FundamentalId::Bond(id) => self.delete_bond(id),
+            };
+        }
+    }
+
+    /// Empties a substituent and then removes it from the map, returning the IDs of the
+    /// former members.
+    ///
+    /// All removed fundamentals continue to exist.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the substituent is not in the map.
+    pub(crate) fn dissolve_substituent(&mut self, id: SubstituentId) -> Vec<FundamentalId> {
+        let sub = self
+            .substituents
+            .remove(id)
+            .expect("Caller is required to ensure that the MoleculeId is valid");
+        sub.members
+    }
+
+    /// Empties a molecule and then removes it from the map, returning the IDs of the
+    /// former members.
+    ///
+    /// All removed fundamentals continue to exist.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the molecule is not in the map.
+    pub(crate) fn dissolve_molecule(&mut self, id: MoleculeId) -> Vec<FundamentalId> {
+        let mol = self
+            .molecules
+            .remove(id)
+            .expect("Caller is required to ensure that the MoleculeId is valid");
+        mol.members
+    }
+}
+
+/// Private helper methods.
+impl MolGraph {
     /// Determines the substituent that contains the atom, pseudoatom, or bond, if any.
     fn parent_substituent(&self, fundamental: FundamentalId) -> Option<SubstituentId> {
         for (substituent_id, substituent) in self.substituents.iter() {
