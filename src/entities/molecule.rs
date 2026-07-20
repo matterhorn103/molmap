@@ -17,8 +17,8 @@ new_key_type! {
 
 /// The core data of a molecule entity.
 #[derive(Debug)]
-pub struct Molecule {
-    pub members: Vec<FundamentalId>,
+pub(crate) struct Molecule {
+    pub(crate) members: Vec<FundamentalId>,
 }
 
 impl Molecule {

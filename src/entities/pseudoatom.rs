@@ -8,7 +8,7 @@
 
 use slotmap::new_key_type;
 
-use crate::{ids::BondId, traits::MolMap};
+use crate::{Pseudoelement, ids::BondId, traits::MolMap};
 
 new_key_type! {
     /// An ID corresponding to a specific pseudoatom entity in a `MolMap`.
@@ -21,15 +21,15 @@ new_key_type! {
 /// represents something else.
 /// It may have an unknown composition like R, or a known structure like Ph.
 #[derive(Debug)]
-pub struct Pseudoatom {
-    pub symbol: String,
-    pub bonds: Vec<BondId>,
+pub(crate) struct Pseudoatom {
+    pub(crate) pseudoelement: Pseudoelement,
+    pub(crate) bonds: Vec<BondId>,
 }
 
 impl Pseudoatom {
-    pub fn new(symbol: String) -> Self {
+    pub fn new(pseudoelement: Pseudoelement) -> Self {
         Self {
-            symbol,
+            pseudoelement,
             bonds: Vec::new(),
         }
     }
@@ -52,10 +52,6 @@ impl<'a, M: MolMap> PseudoatomView<'a, M> {
     /// Returns the corresponding data from the core `MolGraph`.
     fn core(&self) -> &'a Pseudoatom {
         self.molmap.core().pseudoatoms.get(self.id).unwrap()
-    }
-
-    pub fn symbol(&self) -> &str {
-        &self.core().symbol
     }
 
     pub fn bonds(&self) -> &[BondId] {
@@ -91,9 +87,9 @@ impl<'a, M: MolMap> PseudoatomViewMut<'a, M> {
 
     // Public methods, which should consume the view
 
-    /// Set the symbol of the pseudoatom without any additional effects.
-    pub fn set_symbol(mut self, symbol: String) {
-        self.core().symbol = symbol
+    /// Set the pseudoelement of the pseudoatom without any additional effects.
+    pub fn set_pseudoelement(mut self, pseudoelement: Pseudoelement) {
+        self.core().pseudoelement = pseudoelement
     }
 
     /// Removes the pseudoatom from the map, as well as any bonds to it.

@@ -9,7 +9,7 @@
 use slotmap::SlotMap;
 
 use crate::{
-    BondType, Element,
+    BondType, Element, Pseudoelement,
     entities::{substituent::SubstituentCentre, *},
     ids::*,
 };
@@ -171,8 +171,8 @@ impl MolGraph {
     }
 
     /// Adds a pseudoatom to the map.
-    pub(crate) fn add_pseudoatom(&mut self, symbol: &str) -> PseudoatomId {
-        self.pseudoatoms.insert(Pseudoatom::new(symbol.to_owned()))
+    pub(crate) fn add_pseudoatom(&mut self, pseudoelement: Pseudoelement) -> PseudoatomId {
+        self.pseudoatoms.insert(Pseudoatom::new(pseudoelement))
     }
 
     /// Creates a new (single covalent) bond between two bondable entities.

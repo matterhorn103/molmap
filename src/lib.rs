@@ -16,6 +16,7 @@ mod entities;
 mod error;
 mod graph;
 mod maps;
+mod pseudoelement;
 
 pub mod ids;
 pub mod traits;
@@ -25,4 +26,5 @@ pub use element::Element;
 pub use entities::bond::BondType;
 pub use error::{MolMapError, MolMapResult};
 pub use maps::{MolMap0, MolMap2, MolMap3};
+pub use pseudoelement::Pseudoelement;
 pub use traits::{MolMap, SpatialMolMap};

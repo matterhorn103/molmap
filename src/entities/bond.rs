@@ -29,11 +29,11 @@ pub enum BondType {
 
 /// The core data of a bond entity.
 #[derive(Debug)]
-pub struct Bond {
-    pub bond_type: BondType,
-    pub order: f32,
-    pub start: BondableId,
-    pub end: BondableId,
+pub(crate) struct Bond {
+    pub(crate) bond_type: BondType,
+    pub(crate) order: f32,
+    pub(crate) start: BondableId,
+    pub(crate) end: BondableId,
 }
 
 impl Bond {
