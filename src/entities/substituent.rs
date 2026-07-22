@@ -74,17 +74,19 @@ impl<'a, M: MolMap> SubstituentView<'a, M> {
         self.molmap.core().substituents.get(self.id).unwrap()
     }
 
+    /// Returns details of the centre(s) of the substituent.
     pub fn centre(&self) -> &SubstituentCentre {
         &self.core().centre
     }
 
-    pub fn members(&self) -> &[FundamentalId] {
-        &self.core().members
+    /// Returns an iterator over the IDs of all constituent atoms, pseudoatoms, and bonds.
+    pub fn members(&self) -> impl Iterator<Item = FundamentalId> {
+        self.core().members.iter().copied()
     }
 
     /// Checks if the substituent contains the given atom, pseudoatom, or bond.
     pub fn contains(&self, fundamental: FundamentalId) -> bool {
-        self.members().contains(&fundamental)
+        self.core().members.contains(&fundamental)
     }
 }
 

@@ -41,7 +41,7 @@ impl From<PseudoatomId> for AtomlikeId {
 /// An ID of a fundamental entity, an entity that does not group other entities.
 ///
 /// Fundamentals are the basic building blocks of a `MolMap`.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum FundamentalId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),

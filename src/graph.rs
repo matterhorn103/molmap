@@ -436,11 +436,11 @@ impl MolGraph {
         fundamental: FundamentalId,
     ) -> bool {
         let sub = self.substituents.get_mut(substituent).unwrap();
-        if sub.members.contains(&fundamental) {
+        if !sub.members.contains(&fundamental) {
             sub.members.push(fundamental);
-            false
-        } else {
             true
+        } else {
+            false
         }
     }
 
@@ -461,12 +461,7 @@ impl MolGraph {
         fundamental: FundamentalId,
     ) -> bool {
         let mol = self.molecules.get_mut(molecule).unwrap();
-        if mol.members.contains(&fundamental) {
-            mol.members.push(fundamental);
-            false
-        } else {
-            true
-        }
+        mol.members.insert(fundamental)
     }
 
     /// Removes an atom, pseudoatom, or bond from a substituent.
@@ -538,12 +533,7 @@ impl MolGraph {
         fundamental: FundamentalId,
     ) -> bool {
         let mol = self.molecules.get_mut(molecule).unwrap();
-        if let Some(index) = mol.members.iter().position(|x| *x == fundamental) {
-            mol.members.swap_remove(index);
-            true
-        } else {
-            false
-        }
+        mol.members.remove(&fundamental)
     }
 
     /// Empties a substituent by removing all its members, returning an iterator over
@@ -559,7 +549,7 @@ impl MolGraph {
     pub(crate) fn drain_substituent(
         &mut self,
         id: SubstituentId,
-    ) -> std::vec::Drain<'_, FundamentalId> {
+    ) -> impl Iterator<Item = FundamentalId> {
         let sub = self
             .substituents
             .get_mut(id)
@@ -576,12 +566,12 @@ impl MolGraph {
     /// # Panics
     ///
     /// Panics if the molecule is not in the map.
-    pub(crate) fn drain_molecule(&mut self, id: MoleculeId) -> std::vec::Drain<'_, FundamentalId> {
+    pub(crate) fn drain_molecule(&mut self, id: MoleculeId) -> impl Iterator<Item = FundamentalId> {
         let mut mol = self
             .molecules
             .get_mut(id)
             .expect("Caller is required to ensure that the MoleculeId is valid");
-        mol.members.drain(..)
+        mol.members.drain()
     }
 
     /// Empties a substituent by deleting all its members.
@@ -623,7 +613,7 @@ impl MolGraph {
             .molecules
             .get_mut(id)
             .expect("Caller is required to ensure that the MoleculeId is valid");
-        let former_members: Vec<FundamentalId> = mol.members.drain(..).collect();
+        let former_members: Vec<FundamentalId> = mol.members.drain().collect();
         // It's fine to delete in any order as if something isn't in the map any more
         // (e.g. because it's a bond and one of its bonding partners was already deleted
         // and thus it too was already deleted) then nothing changes when the deletion
@@ -645,12 +635,15 @@ impl MolGraph {
     /// # Panics
     ///
     /// Panics if the substituent is not in the map.
-    pub(crate) fn dissolve_substituent(&mut self, id: SubstituentId) -> Vec<FundamentalId> {
+    pub(crate) fn dissolve_substituent(
+        &mut self,
+        id: SubstituentId,
+    ) -> impl Iterator<Item = FundamentalId> {
         let sub = self
             .substituents
             .remove(id)
             .expect("Caller is required to ensure that the MoleculeId is valid");
-        sub.members
+        sub.members.into_iter()
     }
 
     /// Empties a molecule and then removes it from the map, returning the IDs of the
@@ -661,12 +654,15 @@ impl MolGraph {
     /// # Panics
     ///
     /// Panics if the molecule is not in the map.
-    pub(crate) fn dissolve_molecule(&mut self, id: MoleculeId) -> Vec<FundamentalId> {
+    pub(crate) fn dissolve_molecule(
+        &mut self,
+        id: MoleculeId,
+    ) -> impl Iterator<Item = FundamentalId> {
         let mol = self
             .molecules
             .remove(id)
             .expect("Caller is required to ensure that the MoleculeId is valid");
-        mol.members
+        mol.members.into_iter()
     }
 }
 
