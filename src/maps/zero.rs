@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// A pure molecular graph, without spatial positions.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MolMap0 {
     pub(crate) core: MolGraph,
 }

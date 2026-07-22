@@ -18,7 +18,7 @@ new_key_type! {
 }
 
 /// The core data of a molecule entity.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Molecule {
     pub(crate) members: HashSet<FundamentalId>,
 }
@@ -32,7 +32,7 @@ impl Molecule {
 }
 
 /// An immutable view over a specific molecule entity in a specific `MolMap`.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct MoleculeView<'a, M: MolMap> {
     pub molmap: &'a M,
     pub id: MoleculeId,
@@ -62,6 +62,7 @@ impl<'a, M: MolMap> MoleculeView<'a, M> {
 }
 
 /// A mutable view over a specific molecule entity in a specific `MolMap`.
+#[derive(Debug)]
 pub struct MoleculeViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: MoleculeId,

@@ -20,7 +20,7 @@ new_key_type! {
 /// A pseudoatom is something that has a "symbol" like a normal atom but
 /// represents something else.
 /// It may have an unknown composition like R, or a known structure like Ph.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Pseudoatom {
     pub(crate) pseudoelement: Pseudoelement,
     pub(crate) bonds: Vec<BondId>,
@@ -36,7 +36,7 @@ impl Pseudoatom {
 }
 
 /// An immutable view over a specific pseudoatom entity in a specific `MolMap`.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct PseudoatomView<'a, M: MolMap> {
     pub molmap: &'a M,
     pub id: PseudoatomId,
@@ -60,6 +60,7 @@ impl<'a, M: MolMap> PseudoatomView<'a, M> {
 }
 
 /// A mutable view over a specific pseudoatom entity in a specific `MolMap`.
+#[derive(Debug)]
 pub struct PseudoatomViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: PseudoatomId,

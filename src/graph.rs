@@ -26,7 +26,7 @@ use crate::{
 /// so that the higher maps can combine them to create a nice public API.
 /// The methods should also do as little checking and validation as possible, with
 /// panicking preferred - the higher maps are then responsible for careful usage.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MolGraph {
     pub(crate) atoms: SlotMap<AtomId, Atom>,
     pub(crate) pseudoatoms: SlotMap<PseudoatomId, Pseudoatom>,

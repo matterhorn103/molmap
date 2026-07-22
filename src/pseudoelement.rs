@@ -16,7 +16,7 @@ use crate::entities::definition::DefinitionId;
 /// refer to, only the few listed explicitly in the
 /// [2008 IUPAC Recommendations for chemical structure diagrams](https://doi.org/10.1351/pac200880020277)
 /// are defined as named variants; others should be defined with custom definitions.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, Debug)]
 #[non_exhaustive]
 #[allow(non_camel_case_types)]
 pub enum Pseudoelement {

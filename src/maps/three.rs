@@ -16,7 +16,7 @@ use crate::{
     traits::{MolMapCore, SpatialMolMap},
 };
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MolMap3 {
     pub(crate) core: MolGraph,
     pub(crate) atom_positions: SecondaryMap<AtomId, Point3<f64>>,

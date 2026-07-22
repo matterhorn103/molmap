@@ -19,7 +19,7 @@ new_key_type! {
 }
 
 /// The type of a bond e.g. covalent, ionic.
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum BondType {
     Covalent,
     Intermolecular,
@@ -28,7 +28,7 @@ pub enum BondType {
 }
 
 /// The core data of a bond entity.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Bond {
     pub(crate) bond_type: BondType,
     pub(crate) order: f32,
@@ -48,7 +48,7 @@ impl Bond {
 }
 
 /// An immutable view over a specific bond entity in a specific `MolMap`.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct BondView<'a, M: MolMap> {
     pub molmap: &'a M,
     pub id: BondId,
@@ -84,6 +84,7 @@ impl<'a, M: MolMap> BondView<'a, M> {
 ///
 /// Note that the bonding partners of a bond cannot be changed; the bond must be
 /// removed and a new one added between the desired new bonding partners.
+#[derive(Debug)]
 pub struct BondViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: BondId,

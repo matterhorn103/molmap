@@ -20,7 +20,7 @@ pub use crate::entities::substituent::SubstituentId;
 /// An ID of an atom or something that behaves like one (a pseudoatom).
 ///
 /// Atomlikes are the true nodes of the molecular graph.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum AtomlikeId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
@@ -41,7 +41,7 @@ impl From<PseudoatomId> for AtomlikeId {
 /// An ID of a fundamental entity, an entity that does not group other entities.
 ///
 /// Fundamentals are the basic building blocks of a `MolMap`.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum FundamentalId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
@@ -76,7 +76,7 @@ impl From<AtomlikeId> for FundamentalId {
 }
 
 /// An ID of a collection, an aggregation of fundamental entities.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum CollectionId {
     Substituent(SubstituentId),
     Molecule(MoleculeId),
@@ -95,7 +95,7 @@ impl From<MoleculeId> for CollectionId {
 }
 
 /// An ID of an entity that can form bonds.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum BondableId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
@@ -124,7 +124,7 @@ impl From<AtomlikeId> for BondableId {
 }
 
 /// An ID of an entity that an `Object` can be attached to.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum AnchorId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),
@@ -164,7 +164,7 @@ impl From<MoleculeId> for AnchorId {
 }
 
 /// An ID of any kind of entity.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum EntityId {
     Atom(AtomId),
     Pseudoatom(PseudoatomId),

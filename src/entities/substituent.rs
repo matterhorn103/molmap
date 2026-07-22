@@ -19,7 +19,7 @@ new_key_type! {
     pub struct SubstituentId;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum SubstituentCentre {
     None,
     Single(AtomlikeId),
@@ -40,7 +40,7 @@ pub enum SubstituentCentre {
 /// Substituents generally indicate one or more centres, so that bonds can be made
 /// "to" the centre. This allows molecules to be built up conveniently by adding and
 /// connecting substituents rather than individual atoms.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Substituent {
     pub(crate) centre: SubstituentCentre,
     pub(crate) members: Vec<FundamentalId>,
@@ -56,7 +56,7 @@ impl Substituent {
 }
 
 /// An immutable view over a specific substituent entity in a specific `MolMap`.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct SubstituentView<'a, M: MolMap> {
     pub molmap: &'a M,
     pub id: SubstituentId,
@@ -91,6 +91,7 @@ impl<'a, M: MolMap> SubstituentView<'a, M> {
 }
 
 /// A mutable view over a specific substituent entity in a specific `MolMap`.
+#[derive(Debug)]
 pub struct SubstituentViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: SubstituentId,

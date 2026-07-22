@@ -16,7 +16,7 @@ new_key_type! {
 }
 
 /// The core data of an atom entity.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Atom {
     pub(crate) element: Element,
     pub(crate) bonds: Vec<BondId>,
@@ -32,7 +32,7 @@ impl Atom {
 }
 
 /// An immutable view over a specific atom entity in a specific `MolMap`.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Debug)]
 pub struct AtomView<'a, M: MolMap> {
     pub molmap: &'a M,
     pub id: AtomId,
@@ -64,6 +64,7 @@ impl<'a, M: MolMap> AtomView<'a, M> {
 }
 
 /// A mutable view over a specific atom entity in a specific `MolMap`.
+#[derive(Debug)]
 pub struct AtomViewMut<'a, M: MolMap> {
     pub molmap: &'a mut M,
     pub id: AtomId,
