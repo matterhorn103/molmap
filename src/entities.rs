@@ -21,6 +21,7 @@
 pub(crate) mod atom;
 pub(crate) mod bond;
 pub(crate) mod definition;
+pub(crate) mod ids;
 pub(crate) mod molecule;
 pub(crate) mod pseudoatom;
 pub(crate) mod substituent;
@@ -31,38 +32,3 @@ pub(crate) use bond::Bond;
 pub(crate) use molecule::Molecule;
 pub(crate) use pseudoatom::Pseudoatom;
 pub(crate) use substituent::Substituent;
-
-use crate::{MolMapError, MolMapResult};
-
-/// The kind of an entity.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-#[repr(u8)]
-//#[non_exhaustive]
-pub enum EntityKind {
-    Atom = 0x00,
-    Pseudoatom = 0x01,
-    Bond = 0x02,
-    Substituent = 0x10,
-    Molecule = 0x1F,
-}
-
-impl From<EntityKind> for u8 {
-    fn from(kind: EntityKind) -> Self {
-        kind as u8
-    }
-}
-
-impl TryFrom<u8> for EntityKind {
-    type Error = MolMapError;
-
-    fn try_from(value: u8) -> MolMapResult<Self> {
-        match value {
-            0x00 => Ok(Self::Atom),
-            0x01 => Ok(Self::Pseudoatom),
-            0x02 => Ok(Self::Bond),
-            0x10 => Ok(Self::Substituent),
-            0x1F => Ok(Self::Molecule),
-            _ => Err(MolMapError::UnknownEntityKind(value)),
-        }
-    }
-}

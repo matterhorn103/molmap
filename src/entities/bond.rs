@@ -9,7 +9,6 @@
 use slotmap::new_key_type;
 
 use crate::{
-    entities::EntityKind,
     ids::{AtomId, AtomlikeId, BondId, BondableId, KeyId, PseudoatomId, SubstituentId},
     traits::MolMap,
 };

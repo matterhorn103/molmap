@@ -18,9 +18,12 @@ mod graph;
 mod maps;
 mod pseudoelement;
 
-pub mod ids;
 pub mod traits;
 pub mod views;
+
+pub mod ids {
+    pub use crate::entities::ids::*;
+}
 
 pub use element::Element;
 pub use entities::bond::BondType;

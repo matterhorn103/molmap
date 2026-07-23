@@ -8,7 +8,7 @@
 
 use std::fmt::Debug;
 
-use crate::{entities::EntityKind, graph::MolGraph, ids::*, views::*};
+use crate::{graph::MolGraph, ids::*, views::*};
 
 /// A trait implemented by all `MolMap` types to provide access to their core
 /// `MolGraph` without exposing a public interface to it.

@@ -10,7 +10,6 @@ use slotmap::new_key_type;
 
 use crate::{
     MolMapError, MolMapResult,
-    entities::EntityKind,
     ids::{AtomlikeId, BondId, FundamentalId, Id, SubstituentId, TaggedAtomlike, TaggedEntity},
     traits::MolMap,
 };
