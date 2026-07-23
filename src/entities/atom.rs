@@ -6,14 +6,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use slotmap::new_key_type;
-
-use crate::{Element, ids::BondId, traits::MolMap};
-
-new_key_type! {
-    /// An ID corresponding to a specific atom entity in a `MolMap`.
-    pub struct AtomId;
-}
+use crate::{
+    Element, MolMapError, MolMapResult,
+    ids::{AtomId, BondId},
+    traits::MolMap,
+};
 
 /// The core data of an atom entity.
 #[derive(Clone, Debug)]

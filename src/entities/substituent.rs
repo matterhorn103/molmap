@@ -10,14 +10,10 @@ use slotmap::new_key_type;
 
 use crate::{
     MolMapError, MolMapResult,
-    ids::{AtomlikeId, BondId, FundamentalId},
+    entities::EntityKind,
+    ids::{AtomlikeId, BondId, FundamentalId, Id, SubstituentId, TaggedAtomlike, TaggedEntity},
     traits::MolMap,
 };
-
-new_key_type! {
-    /// An ID corresponding to a specific substituent entity in a `MolMap`.
-    pub struct SubstituentId;
-}
 
 #[derive(Clone, Debug)]
 pub enum SubstituentCentre {
@@ -136,22 +132,22 @@ impl<'a, M: MolMap> SubstituentViewMut<'a, M> {
             .ok_or(MolMapError::Membership(new.into()))?;
         // A closure that determines if an atom or pseudoatom has bonds already
         let atomlike_has_bonds = |id: AtomlikeId| -> bool {
-            let bonds = match id {
-                AtomlikeId::Atom(atom_id) => {
+            let bonds = match id.to_tagged() {
+                TaggedAtomlike::Atom(id) => {
                     &self
                         .molmap
                         .core()
                         .atoms
-                        .get(atom_id)
+                        .get(id.try_into().unwrap())
                         .expect("Wouldn't be listed as the centre if it had been removed")
                         .bonds
                 }
-                AtomlikeId::Pseudoatom(pseudoatom_id) => {
+                TaggedAtomlike::Pseudoatom(id) => {
                     &self
                         .molmap
                         .core()
                         .pseudoatoms
-                        .get(pseudoatom_id)
+                        .get(id)
                         .expect("Wouldn't be listed as the centre if it had been removed")
                         .bonds
                 }

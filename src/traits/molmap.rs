@@ -8,7 +8,7 @@
 
 use std::fmt::Debug;
 
-use crate::{graph::MolGraph, ids::*, views::*};
+use crate::{entities::EntityKind, graph::MolGraph, ids::*, views::*};
 
 /// A trait implemented by all `MolMap` types to provide access to their core
 /// `MolGraph` without exposing a public interface to it.
@@ -70,7 +70,7 @@ pub trait MolMap: Sized + MolMapCore {
 
     // ID-related methods
     // These all just defer to the inner core struct
-    // One method per entity type for:
+    // One method per entity kind for:
     // - iterating over IDs
     // - validating an ID
 
@@ -124,44 +124,42 @@ pub trait MolMap: Sized + MolMapCore {
         self.core().contains_molecule(id)
     }
 
-    /// Checks if the given ID corresponds to an atom or pseudoatom currently in the map.
     fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
-        match atomlike {
-            AtomlikeId::Atom(id) => self.contains_atom(id),
-            AtomlikeId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        match atomlike.to_tagged() {
+            TaggedAtomlike::Atom(id) => self.contains_atom(id),
+            TaggedAtomlike::Pseudoatom(id) => self.contains_pseudoatom(id),
+        }
+    }
+
+    fn contains_bondable(&self, bondable: BondableId) -> bool {
+        match bondable.to_tagged() {
+            TaggedBondable::Atom(id) => self.contains_atom(id),
+            TaggedBondable::Pseudoatom(id) => self.contains_pseudoatom(id),
         }
     }
 
     /// Checks if the given ID corresponds to an atom, pseudoatom, or bond currently in the map.
     fn contains_fundamental(&self, fundamental: FundamentalId) -> bool {
-        match fundamental {
-            FundamentalId::Atom(id) => self.contains_atom(id),
-            FundamentalId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            FundamentalId::Bond(id) => self.contains_bond(id),
-        }
-    }
-
-    /// Checks if the given ID corresponds to an atom, pseudoatom, or substituent currently in the map.
-    fn contains_bondable(&self, bondable: BondableId) -> bool {
-        match bondable {
-            BondableId::Atom(id) => self.contains_atom(id),
-            BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        match fundamental.to_tagged() {
+            TaggedFundamental::Atom(id) => self.contains_atom(id),
+            TaggedFundamental::Pseudoatom(id) => self.contains_pseudoatom(id),
+            TaggedFundamental::Bond(id) => self.contains_bond(id),
         }
     }
 
     /// Checks if the map currently contains the entity with the given ID.
     fn contains(&self, entity: EntityId) -> bool {
-        match entity {
-            EntityId::Atom(id) => self.contains_atom(id),
-            EntityId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            EntityId::Bond(id) => self.contains_bond(id),
-            EntityId::Substituent(id) => self.contains_substituent(id),
-            EntityId::Molecule(id) => self.contains_molecule(id),
+        match entity.to_tagged() {
+            TaggedEntity::Atom(id) => self.contains_atom(id),
+            TaggedEntity::Pseudoatom(id) => self.contains_pseudoatom(id),
+            TaggedEntity::Bond(id) => self.contains_bond(id),
+            TaggedEntity::Substituent(id) => self.contains_substituent(id),
+            TaggedEntity::Molecule(id) => self.contains_molecule(id),
         }
     }
 
     // Getters
-    // One method per entity type for:
+    // One method per entity kind for:
     // - getting a view
     // - getting a mutable view
     // - iterating over (immutable) views

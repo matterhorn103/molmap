@@ -8,12 +8,12 @@
 
 use slotmap::new_key_type;
 
-use crate::{Pseudoelement, ids::BondId, traits::MolMap};
-
-new_key_type! {
-    /// An ID corresponding to a specific pseudoatom entity in a `MolMap`.
-    pub struct PseudoatomId;
-}
+use crate::{
+    Pseudoelement,
+    entities::EntityKind,
+    ids::{BondId, KeyId, PseudoatomId},
+    traits::MolMap,
+};
 
 /// The core data of a pseudoatom entity.
 ///

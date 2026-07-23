@@ -9,14 +9,10 @@
 use slotmap::new_key_type;
 
 use crate::{
-    ids::{AtomId, AtomlikeId, BondableId, PseudoatomId, SubstituentId},
+    entities::EntityKind,
+    ids::{AtomId, AtomlikeId, BondId, BondableId, KeyId, PseudoatomId, SubstituentId},
     traits::MolMap,
 };
-
-new_key_type! {
-    /// An ID corresponding to a specific bond entity in a `MolMap`.
-    pub struct BondId;
-}
 
 /// The type of a bond e.g. covalent, ionic.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]

@@ -10,12 +10,10 @@ use std::collections::HashSet;
 
 use slotmap::new_key_type;
 
-use crate::{ids::FundamentalId, traits::MolMap};
-
-new_key_type! {
-    /// An ID corresponding to a specific molecule entity in a `MolMap`.
-    pub struct MoleculeId;
-}
+use crate::{
+    ids::{FundamentalId, MoleculeId},
+    traits::MolMap,
+};
 
 /// The core data of a molecule entity.
 #[derive(Clone, Debug)]

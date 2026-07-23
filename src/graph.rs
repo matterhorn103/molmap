@@ -120,45 +120,45 @@ impl MolGraph {
 
     /// Checks if the map currently contains the atomlike with the given ID.
     pub(crate) fn contains_atomlike(&self, atomlike: AtomlikeId) -> bool {
-        match atomlike {
-            AtomlikeId::Atom(id) => self.contains_atom(id),
-            AtomlikeId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        match atomlike.to_tagged() {
+            TaggedAtomlike::Atom(id) => self.contains_atom(id),
+            TaggedAtomlike::Pseudoatom(id) => self.contains_pseudoatom(id),
         }
     }
 
     /// Checks if the map currently contains the fundamental with the given ID.
     pub(crate) fn contains_fundamental(&self, fundamental: FundamentalId) -> bool {
-        match fundamental {
-            FundamentalId::Atom(id) => self.contains_atom(id),
-            FundamentalId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            FundamentalId::Bond(id) => self.contains_bond(id),
+        match fundamental.to_tagged() {
+            TaggedFundamental::Atom(id) => self.contains_atom(id),
+            TaggedFundamental::Pseudoatom(id) => self.contains_pseudoatom(id),
+            TaggedFundamental::Bond(id) => self.contains_bond(id),
         }
     }
 
     /// Checks if the map currently contains the bondable with the given ID.
     pub(crate) fn contains_bondable(&self, bondable: BondableId) -> bool {
-        match bondable {
-            BondableId::Atom(id) => self.contains_atom(id),
-            BondableId::Pseudoatom(id) => self.contains_pseudoatom(id),
+        match bondable.to_tagged() {
+            TaggedBondable::Atom(id) => self.contains_atom(id),
+            TaggedBondable::Pseudoatom(id) => self.contains_pseudoatom(id),
         }
     }
 
     /// Checks if the map currently contains the collection with the given ID.
     pub(crate) fn contains_collection(&self, collection: CollectionId) -> bool {
-        match collection {
-            CollectionId::Substituent(id) => self.contains_substituent(id),
-            CollectionId::Molecule(id) => self.contains_molecule(id),
+        match collection.to_tagged() {
+            TaggedCollection::Substituent(id) => self.contains_substituent(id),
+            TaggedCollection::Molecule(id) => self.contains_molecule(id),
         }
     }
 
     /// Checks if the map currently contains the entity with the given ID.
     pub(crate) fn contains(&self, entity: EntityId) -> bool {
-        match entity {
-            EntityId::Atom(id) => self.contains_atom(id),
-            EntityId::Pseudoatom(id) => self.contains_pseudoatom(id),
-            EntityId::Bond(id) => self.contains_bond(id),
-            EntityId::Substituent(id) => self.contains_substituent(id),
-            EntityId::Molecule(id) => self.contains_molecule(id),
+        match entity.to_tagged() {
+            TaggedEntity::Atom(id) => self.contains_atom(id),
+            TaggedEntity::Pseudoatom(id) => self.contains_pseudoatom(id),
+            TaggedEntity::Bond(id) => self.contains_bond(id),
+            TaggedEntity::Substituent(id) => self.contains_substituent(id),
+            TaggedEntity::Molecule(id) => self.contains_molecule(id),
         }
     }
 }
@@ -185,9 +185,9 @@ impl MolGraph {
             .bonds
             .insert(Bond::new(BondType::Covalent, 1.0, start, end));
         for partner in [start, end] {
-            match partner {
-                BondableId::Atom(id) => self.atoms.get_mut(id).unwrap().bonds.push(bond_id),
-                BondableId::Pseudoatom(id) => {
+            match partner.to_tagged() {
+                TaggedBondable::Atom(id) => self.atoms.get_mut(id).unwrap().bonds.push(bond_id),
+                TaggedBondable::Pseudoatom(id) => {
                     self.pseudoatoms.get_mut(id).unwrap().bonds.push(bond_id)
                 }
             }
@@ -282,8 +282,8 @@ impl MolGraph {
     pub(crate) fn delete_bond(&mut self, id: BondId) -> bool {
         if let Some(bond) = self.bonds.remove(id) {
             for bonding_partner in [bond.start, bond.end] {
-                match bonding_partner {
-                    BondableId::Atom(atom_id) => {
+                match bonding_partner.to_tagged() {
+                    TaggedBondable::Atom(atom_id) => {
                         let mut atom = self
                             .atoms
                             .get_mut(atom_id)
@@ -293,7 +293,7 @@ impl MolGraph {
                         );
                         atom.bonds.remove(pos);
                     }
-                    BondableId::Pseudoatom(pseudoatom_id) => {
+                    TaggedBondable::Pseudoatom(pseudoatom_id) => {
                         let mut pseudoatom = self
                             .pseudoatoms
                             .get_mut(pseudoatom_id)
@@ -329,14 +329,14 @@ impl MolGraph {
         };
         let members = self.substituents.get(id).unwrap().members.clone();
         for member in members {
-            match member {
-                FundamentalId::Atom(id) => {
+            match member.to_tagged() {
+                TaggedFundamental::Atom(id) => {
                     self.delete_atom(id);
                 }
-                FundamentalId::Pseudoatom(id) => {
+                TaggedFundamental::Pseudoatom(id) => {
                     self.delete_pseudoatom(id);
                 }
-                FundamentalId::Bond(id) => {
+                TaggedFundamental::Bond(id) => {
                     self.delete_bond(id);
                 }
             }
@@ -355,14 +355,14 @@ impl MolGraph {
         };
         let members = self.molecules.get(id).unwrap().members.clone();
         for member in members {
-            match member {
-                FundamentalId::Atom(id) => {
+            match member.to_tagged() {
+                TaggedFundamental::Atom(id) => {
                     self.delete_atom(id);
                 }
-                FundamentalId::Pseudoatom(id) => {
+                TaggedFundamental::Pseudoatom(id) => {
                     self.delete_pseudoatom(id);
                 }
-                FundamentalId::Bond(id) => {
+                TaggedFundamental::Bond(id) => {
                     self.delete_bond(id);
                 }
             }
@@ -378,9 +378,9 @@ impl MolGraph {
     ///
     /// If the atomlike is not in the map, nothing changes.
     pub(crate) fn delete_atomlike(&mut self, atomlike: AtomlikeId) -> bool {
-        match atomlike {
-            AtomlikeId::Atom(id) => self.delete_atom(id),
-            AtomlikeId::Pseudoatom(id) => self.delete_pseudoatom(id),
+        match atomlike.to_tagged() {
+            TaggedAtomlike::Atom(id) => self.delete_atom(id),
+            TaggedAtomlike::Pseudoatom(id) => self.delete_pseudoatom(id),
         }
     }
 
@@ -393,10 +393,10 @@ impl MolGraph {
     ///
     /// If the fundamental is not in the map, nothing changes.
     pub(crate) fn delete_fundamental(&mut self, fundamental: FundamentalId) -> bool {
-        match fundamental {
-            FundamentalId::Atom(id) => self.delete_atom(id),
-            FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
-            FundamentalId::Bond(id) => self.delete_bond(id),
+        match fundamental.to_tagged() {
+            TaggedFundamental::Atom(id) => self.delete_atom(id),
+            TaggedFundamental::Pseudoatom(id) => self.delete_pseudoatom(id),
+            TaggedFundamental::Bond(id) => self.delete_bond(id),
         }
     }
 
@@ -406,9 +406,9 @@ impl MolGraph {
     ///
     /// If the collection is not in the map, nothing changes.
     pub(crate) fn delete_collection(&mut self, collection: CollectionId) -> bool {
-        match collection {
-            CollectionId::Substituent(id) => self.delete_substituent(id),
-            CollectionId::Molecule(id) => self.delete_molecule(id),
+        match collection.to_tagged() {
+            TaggedCollection::Substituent(id) => self.delete_substituent(id),
+            TaggedCollection::Molecule(id) => self.delete_molecule(id),
         }
     }
 }
@@ -503,10 +503,10 @@ impl MolGraph {
                 }
             }
             SubstituentCentre::Multiple(atomlikes) => {
-                if let Some(atomlike) = match fundamental {
-                    FundamentalId::Bond(_) => None,
-                    FundamentalId::Atom(id) => Some(id.into()),
-                    FundamentalId::Pseudoatom(id) => Some(id.into()),
+                if let Some(atomlike) = match fundamental.to_tagged() {
+                    TaggedFundamental::Bond(_) => None,
+                    TaggedFundamental::Atom(id) => Some(id.into()),
+                    TaggedFundamental::Pseudoatom(id) => Some(id.into()),
                 } && let Some(index) = atomlikes.iter().position(|x| *x == atomlike)
                 {
                     // We want to preserve order
@@ -593,10 +593,10 @@ impl MolGraph {
         // and thus it too was already deleted) then nothing changes when the deletion
         // is attempted
         for member in former_members {
-            match member {
-                FundamentalId::Atom(id) => self.delete_atom(id),
-                FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
-                FundamentalId::Bond(id) => self.delete_bond(id),
+            match member.to_tagged() {
+                TaggedFundamental::Atom(id) => self.delete_atom(id),
+                TaggedFundamental::Pseudoatom(id) => self.delete_pseudoatom(id),
+                TaggedFundamental::Bond(id) => self.delete_bond(id),
             };
         }
     }
@@ -619,10 +619,10 @@ impl MolGraph {
         // and thus it too was already deleted) then nothing changes when the deletion
         // is attempted
         for member in former_members {
-            match member {
-                FundamentalId::Atom(id) => self.delete_atom(id),
-                FundamentalId::Pseudoatom(id) => self.delete_pseudoatom(id),
-                FundamentalId::Bond(id) => self.delete_bond(id),
+            match member.to_tagged() {
+                TaggedFundamental::Atom(id) => self.delete_atom(id),
+                TaggedFundamental::Pseudoatom(id) => self.delete_pseudoatom(id),
+                TaggedFundamental::Bond(id) => self.delete_bond(id),
             };
         }
     }
