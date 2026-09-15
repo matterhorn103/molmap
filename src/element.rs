@@ -292,6 +292,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn atomic_number() {
+        assert_eq!(Element::H.atomic_number(), 1);
+        assert_eq!(Element::C.atomic_number(), 6);
+        assert_eq!(Element::N.atomic_number(), 7);
+        assert_eq!(Element::O.atomic_number(), 8);
+        assert_eq!(Element::Fe.atomic_number(), 26);
+    }
+
+    #[test]
+    fn symbol() {
+        assert_eq!(Element::He.symbol(), "He");
+        assert_eq!(Element::Ag.symbol(), "Ag");
+        assert_eq!(Element::Xe.symbol(), "Xe");
+        assert_eq!(Element::Pu.symbol(), "Pu");
+    }
+
+    #[test]
     fn default_valency_matches_smiles_plus() {
         assert_eq!(Element::B.default_valency(), 3);
         assert_eq!(Element::C.default_valency(), 4);
