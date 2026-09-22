@@ -330,7 +330,7 @@ mod tests {
 
     const BOND_RAW: u64 = 0x1_01_000008; // version: 1, kind: Bond, idx: 8
     const ATOM_RAW: u64 = 0x3_00_000010; // version: 3, kind: Atom, idx: 16, (version always odd for occupied slots)
-    const PSEUDOATOM_RAW: u64 = 0x1_03_00000A; // version: 1, kind: Pseudoatom, idx: 10
+    const PSEUDOATOM_RAW: u64 = 0x1_02_00000A; // version: 1, kind: Pseudoatom, idx: 10
     const MOLECULE_RAW: u64 = 0x1_1F_000001; // version: 1, kind: Molecule, idx: 1
 
     const BOND: Bond = Bond(Id(NonZeroU64::new(BOND_RAW).unwrap()));
@@ -362,57 +362,49 @@ mod tests {
         assert_eq!(Atom::new_unchecked(atomlike.into_inner()), ATOM);
     }
 
-    //#[test]
-    //fn convert_key_to_category_fails() {
-    //    // TODO Consider whether to remove this test or to reinstate the TryFrom impl
-    //    //
-    //    // Conversion of a Bond to an Atomlike is forbidden
-    //    // There's simply no From implementation
-    //    // It can be attempted via the Entity, but it should fail
-    //    //let bond = BOND;
-    //    //let attempt = Atomlike::try_from(Id::from(bond));
-    //    //assert!(Atomlike::try_from(Id::from(bond)).is_err());
-    //}
+    #[test]
+    fn convert_key_to_category_fails() {
+        // Conversion of a Bond to an AnyAtomlike is forbidden, because Bond isn't Atomlike
+        // There's simply no From implementation
+        // It can be attempted via the Entity, but it should fail
+        assert!(AnyAtomlike::try_from(BOND.as_entity()).is_err());
+    }
 
-    //#[test]
-    //fn convert_category_to_key() {
-    //    let atom: AnyFundamental = ATOM.into();
-    //    let bond: AnyFundamental = BOND.into();
-    //    // Conversion should work when the attempted conversion aligns with the kind
-    //    assert!(Id::<Atom>::try_from(atom).is_ok());
-    //    assert!(Id::<Bond>::try_from(bond).is_ok());
-    //    // But not otherwise
-    //    assert!(Id::<Bond>::try_from(atom).is_err());
-    //    assert!(Id::<Atom>::try_from(bond).is_err());
-    //    assert!(Id::<Pseudoatom>::try_from(atom).is_err());
-    //    assert!(Id::<Pseudoatom>::try_from(bond).is_err());
-    //}
+    #[test]
+    fn convert_category_to_key() {
+        let atom: AnyFundamental = ATOM.into();
+        let bond: AnyFundamental = BOND.into();
+        // Conversion should work when the attempted conversion aligns with the kind
+        assert!(Atom::try_from(atom).is_ok());
+        assert!(Bond::try_from(bond).is_ok());
+        // But not otherwise
+        assert!(Bond::try_from(atom).is_err());
+        assert!(Atom::try_from(bond).is_err());
+        assert!(Pseudoatom::try_from(atom).is_err());
+        assert!(Pseudoatom::try_from(bond).is_err());
+    }
 
-    //#[test]
-    //fn convert_key_cat_key_round_trip() {
-    //    // Bond to Fundamental works, as does round trip
-    //    let bond = BOND;
-    //    assert_eq!(
-    //        Id::<Fundamental>::from(bond),
-    //        Id::<Fundamental>::new_unchecked(Id(BOND_RAW))
-    //    );
-    //    assert_eq!(
-    //        Id::<Bond>::try_from(Id::<Fundamental>::from(bond)).unwrap(),
-    //        bond
-    //    );
-    //    // Molecule to Collection to Entity to Molecule should all work
-    //    let mol = MOL;
-    //    let col: Collection = mol.into();
-    //    let ent: Id = col.into();
-    //    let recovered: Molecule = ent.try_into().unwrap();
-    //    assert_eq!(ent, mol.0);
-    //    assert_eq!(recovered, mol);
-    //}
+    #[test]
+    fn convert_key_cat_key_round_trip() {
+        // Bond to Fundamental works, as does round trip
+        let bond = BOND;
+        assert_eq!(
+            AnyFundamental::from(bond),
+            AnyFundamental(Id(NonZeroU64::new(BOND_RAW).unwrap()))
+        );
+        assert_eq!(Bond::try_from(AnyFundamental::from(bond)).unwrap(), bond);
+        // Molecule to Collection to Entity to Molecule should all work
+        let col: AnyCollection = MOLECULE.into();
+        let ent: AnyEntity = col.into();
+        let recovered: Molecule = ent.try_into().unwrap();
+        assert_eq!(recovered, MOLECULE);
+        assert_eq!(ent, MOLECULE.as_entity());
+    }
 
     #[test]
     fn convert_between_categories() {
-        let atom = AnyAtomlike::new_unchecked(ATOM.into_inner());
-        let pseudoatom = AnyAtomlike::new_unchecked(PSEUDOATOM.into_inner());
+        let atom: AnyAtomlike = ATOM.into();
+        let pseudoatom: AnyAtomlike = PSEUDOATOM.into();
         assert_eq!(
             AnyFundamental::from(atom),
             AnyFundamental::new_unchecked(ATOM.into_inner())
@@ -432,11 +424,22 @@ mod tests {
     }
 
     #[test]
+    fn convert_between_partially_overlapping() {
+        let atom: AnyFundamental = ATOM.into();
+        let pseudoatom: AnyFundamental = PSEUDOATOM.into();
+        let bond: AnyFundamental = BOND.into();
+        // Conversion succeeds when the resolved kind is in both categories
+        assert!(AnyAtomlike::try_from(atom).is_ok());
+        assert!(AnyAtomlike::try_from(pseudoatom).is_ok());
+        // Fails otherwise
+        assert!(AnyAtomlike::try_from(bond).is_err());
+    }
+
+    #[test]
     fn resolve() {
         // Mostly want to check the ergonomics of getting a tagged representation
-        let tagged: ResolvedAtomlike = Atomlike::to_resolved(ATOM);
-        match tagged {
-            ResolvedAtomlike::Atom(_) => (),
+        match Atomlike::to_resolved(ATOM) {
+            ResolvedAtomlike::Atom(atom) => assert_eq!(atom, ATOM),
             ResolvedAtomlike::Pseudoatom(_) => panic!(),
         }
     }

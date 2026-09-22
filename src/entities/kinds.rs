@@ -361,7 +361,7 @@ mod tests {
 
     const BOND_RAW: NonZeroU64 = NonZeroU64::new(0x1_01_000008).unwrap(); // version: 1, kind: Bond, idx: 8
     const ATOM_RAW: NonZeroU64 = NonZeroU64::new(0x3_00_000010).unwrap(); // version: 3, kind: Atom, idx: 16, (version always odd for occupied slots)
-    const PSEUDOATOM_RAW: NonZeroU64 = NonZeroU64::new(0x1_03_00000A).unwrap(); // version: 1, kind: Pseudoatom, idx: 10
+    const PSEUDOATOM_RAW: NonZeroU64 = NonZeroU64::new(0x1_02_00000A).unwrap(); // version: 1, kind: Pseudoatom, idx: 10
     const MOL_RAW: NonZeroU64 = NonZeroU64::new(0x1_1F_000001).unwrap(); // version: 1, kind: Molecule, idx: 1
 
     const BOND: Bond = Bond(Id(BOND_RAW));
