@@ -6,6 +6,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Functions and methods for working on the graph structures.
+pub(crate) mod entities;
+mod graph;
+mod map;
+mod three;
+mod two;
+mod zero;
 
-//pub mod traversal;
+pub(crate) use graph::AtomGraph;
+pub(crate) use map::AtomMap;
+
+pub use three::AtomMap3;
+pub use two::AtomMap2;
+pub use zero::AtomMap0;

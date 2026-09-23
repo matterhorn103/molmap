@@ -9,8 +9,8 @@
 // Private modules
 // ---------------
 mod element;
-mod molmap;
 mod pseudoelement;
+pub(crate) mod traits;
 
 // ----------
 // Public API
@@ -18,21 +18,23 @@ mod pseudoelement;
 
 // Publicly accessible modules
 // ---------------------------
+pub mod atomic;
+//pub mod crystalline;
 pub mod entities;
 pub mod error;
 pub mod graph;
+pub mod molecular;
 pub mod parse;
-pub mod spatial;
+//pub mod reaction;
 pub mod view;
 
 // Top-level items
 // ---------------
+pub use atomic::entities::BondType;
 pub use element::Element;
-pub use graph::MolMap0;
-pub use graph::data::BondType;
-pub use molmap::MolMap;
+//pub use molecular::{MolMap, MolMap0, MolMap2, MolMap3};
 pub use pseudoelement::Pseudoelement;
-pub use spatial::{MolMap2, MolMap3};
+pub use traits::{Map, Spatial, ThreeDimensional, TwoDimensional};
 
 // Foreign re-exports
 // ------------------

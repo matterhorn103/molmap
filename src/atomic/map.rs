@@ -6,6 +6,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! Functions and methods for working on the graph structures.
+use super::AtomGraph;
 
-//pub mod traversal;
+pub trait AtomMap {
+    /// Returns the core graph.
+    fn graph(&self) -> &AtomGraph;
+
+    /// Returns the core graph in mutable form.
+    fn graph_mut(&mut self) -> &mut AtomGraph;
+}

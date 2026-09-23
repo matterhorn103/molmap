@@ -75,30 +75,30 @@ impl MolGraph {
     /// Returns a reference to the `SlotMap` that holds the entity.
     #[inline]
     pub(crate) fn slotmap<E: Kind>(&self) -> &SlotMap<E::KEY, E::DATA> {
-        E::get_slotmap(self)
+        E::old_get_slotmap(self)
     }
 
     /// Returns a mutable reference to the `SlotMap` that holds the entity.
     #[inline]
     pub(crate) fn slotmap_mut<E: Kind>(&mut self) -> &mut SlotMap<E::KEY, E::DATA> {
-        E::get_slotmap_mut(self)
+        E::old_get_slotmap_mut(self)
     }
 
     /// Returns a reference to the entity's data struct, or `None` if `entity` is invalid.
     #[inline]
     pub(crate) fn data<E: Kind>(&self, entity: E) -> Option<&E::DATA> {
-        self.slotmap::<E>().get(entity.to_key())
+        self.slotmap::<E>().get(entity.old_to_key())
     }
 
     /// Returns a mutable reference to the entity's data struct, or `None` if `entity` is invalid.
     #[inline]
     pub(crate) fn data_mut<E: Kind>(&mut self, entity: E) -> Option<&mut E::DATA> {
-        self.slotmap_mut::<E>().get_mut(entity.to_key())
+        self.slotmap_mut::<E>().get_mut(entity.old_to_key())
     }
 
     /// Checks if the map currently contains the given entity.
     pub(crate) fn contains<E: Kind>(&self, entity: E) -> bool {
-        self.slotmap::<E>().contains_key(entity.to_key())
+        self.slotmap::<E>().contains_key(entity.old_to_key())
     }
 
     /// Returns an iterator over all the keys of a given kind of entity in the map.
