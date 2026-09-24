@@ -12,7 +12,10 @@ use slotmap::SlotMap;
 
 use super::entities::*;
 
-use crate::{entities::*, traits::Graph};
+use crate::{
+    entities::*,
+    traits::{Graph, Store},
+};
 
 // An arena-like data structure to represent a set of chemical entities,
 // their properties, and the relationships between them, as a molecular graph.
@@ -36,18 +39,37 @@ pub struct AtomGraph {
     pub(super) bonds: SlotMap<BondKey, BondData>,
 }
 
-impl Graph for AtomGraph {
-    fn contains<E: Entity>(&self, entity: E) -> bool {
-        match entity.to_resolved() {
-            //ResolvedEntity::Atom(atom) => self.slotmap().contains_key(atom.to_key()),
-            //ResolvedEntity::Bond(bond) => self.slotmap().contains_key(bond.to_key()),
-            //ResolvedEntity::Pseudoatom(pseudoatom) => {
-            //    self.slotmap().contains_key(pseudoatom.to_key())
-            //}
-            _ => false,
+macro_rules! impl_store {
+    ($kind: ident, $attr: ident) => {
+        impl Store<$kind> for AtomGraph {
+            fn slotmap(&self) -> &SlotMap<<$kind as Keyed>::Key, <$kind as Stored>::Data> {
+                &self.$attr
+            }
+
+            fn slotmap_mut(
+                &mut self,
+            ) -> &mut SlotMap<<$kind as Keyed>::Key, <$kind as Stored>::Data> {
+                &mut self.$attr
+            }
         }
-    }
+    };
 }
+impl_store!(Atom, atoms);
+impl_store!(Bond, bonds);
+impl_store!(Pseudoatom, pseudoatoms);
+
+//impl Graph for AtomGraph {
+//    fn contains<E: Entity>(&self, entity: E) -> bool {
+//        match entity.to_resolved() {
+//            //ResolvedEntity::Atom(atom) => self.slotmap().contains_key(atom.to_key()),
+//            //ResolvedEntity::Bond(bond) => self.slotmap().contains_key(bond.to_key()),
+//            //ResolvedEntity::Pseudoatom(pseudoatom) => {
+//            //    self.slotmap().contains_key(pseudoatom.to_key())
+//            //}
+//            _ => false,
+//        }
+//    }
+//}
 
 /// Constructor methods.
 impl AtomGraph {

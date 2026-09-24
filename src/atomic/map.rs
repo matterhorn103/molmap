@@ -9,9 +9,9 @@
 use super::AtomGraph;
 
 pub trait AtomMap {
-    /// Returns the core graph.
+    /// Provides access to the core graph.
     fn graph(&self) -> &AtomGraph;
 
-    /// Returns the core graph in mutable form.
+    /// Provides mutable access to the core graph.
     fn graph_mut(&mut self) -> &mut AtomGraph;
 }

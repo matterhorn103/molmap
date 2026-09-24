@@ -10,7 +10,7 @@
 
 use std::iter::FusedIterator;
 
-use crate::entities::*;
+use crate::{entities::*, traits::Store};
 
 // The view structs simply hold an immutable or mutable reference to the parent map,
 // as appropriate, and the corresponding ID. Both have the visibility `pub(crate)`
@@ -39,23 +39,30 @@ use crate::entities::*;
 //    does not consume the mutable view)
 
 /// An immutable view of an individual entity in a specific [`MolMap`].
-pub struct View<'m, M, E: Entity> {
+pub struct View<'m, M, E> {
     pub(crate) map: &'m M,
     pub(crate) id: E,
 }
 
-impl<'m, M, E: Entity> View<'m, M, E> {
+impl<'m, M, E> View<'m, M, E>
+where
+    E: Entity,
+{
     pub fn id(&self) -> E {
         self.id
     }
 }
 
-//impl<'m, M, E> View<'m, M, E> {
-//    /// Returns a reference to the entity's data struct in the core [`MolGraph`]."
-//    pub(crate) fn data(&self) -> &E::DATA {
-//        self.map.data(self.id).unwrap()
-//    }
-//}
+impl<'m, M, E> View<'m, M, E>
+where
+    M: Store<E>,
+    E: Kind,
+{
+    /// Returns a reference to the entity's data struct in the core [`MolGraph`]."
+    pub(crate) fn data(&self) -> &E::Data {
+        self.map.data(self.id).unwrap()
+    }
+}
 
 /// A mutable view of an individual entity in a specific [`MolMap`].
 ///
@@ -64,12 +71,15 @@ impl<'m, M, E: Entity> View<'m, M, E> {
 /// operation. As such, all public methods of a mutable view, other than `id`,
 /// consume it.
 #[derive(Debug)]
-pub struct ViewMut<'m, M, E: Entity> {
+pub struct ViewMut<'m, M, E> {
     pub(crate) map: &'m mut M,
     pub(crate) id: E,
 }
 
-impl<'m, M, E: Entity> ViewMut<'m, M, E> {
+impl<'m, M, E> ViewMut<'m, M, E>
+where
+    E: Entity,
+{
     /// Returns an immutable view of the same entity.
     #[allow(unused)]
     pub(crate) fn as_view(&'m self) -> View<'m, M, E> {
@@ -81,10 +91,7 @@ impl<'m, M, E: Entity> ViewMut<'m, M, E> {
 }
 
 /// An iterator that yields an immutable view of each of a set of entities in turn.
-pub struct Views<'m, M, E>
-where
-    E: Entity,
-{
+pub struct Views<'m, M, E> {
     pub(crate) map: &'m M,
     pub(crate) ids: std::vec::IntoIter<E>,
 }
