@@ -66,8 +66,8 @@ where
 
 /// A mutable view of an individual entity in a specific [`MolMap`].
 ///
-/// All views are intended to be ephemeral, but this is especially the case for a
-/// mutable view. A new one should be obtained from the parent map for each mutating
+/// All views are intended to be ephemeral, but this is especially the case for
+/// mutable views. A new one should be obtained from the parent map for each mutating
 /// operation. As such, all public methods of a mutable view, other than `id`,
 /// consume it.
 #[derive(Debug)]

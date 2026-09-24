@@ -60,7 +60,7 @@
 //! core structs e.g. [`BondType`] and [`SubstituentCentre`], but these may well
 //! be moved in the future.
 
-use crate::{Element, Pseudoelement, entities::*};
+use crate::{Element, Pseudoelement, atomic::AtomMap, entities::*, traits::Store, view::View};
 
 /// The core data of an atom entity.
 #[derive(Clone, Debug)]
@@ -82,19 +82,19 @@ impl Stored for Atom {
     type Data = AtomData;
 }
 
-//impl<'m, M: Store<Atom>> View<'m, M, Atom> {
-//    pub fn element(&self) -> Element {
-//        self.map.graph().data(self.id).unwrap().element
-//    }
-//
-//    pub fn symbol(&self) -> &str {
-//        self.map.graph().data(self.id).unwrap().element.symbol()
-//    }
-//
-//    pub fn bonds(&self) -> &[Bond] {
-//        &self.map.graph().data(self.id).unwrap().bonds
-//    }
-//}
+impl<'m, M: AtomMap> View<'m, M, Atom> {
+    pub fn element(&self) -> Element {
+        self.map.data(self.id).unwrap().element
+    }
+
+    pub fn symbol(&self) -> &str {
+        self.map.data(self.id).unwrap().element.symbol()
+    }
+
+    pub fn bonds(&self) -> &[Bond] {
+        &self.map.data(self.id).unwrap().bonds
+    }
+}
 
 /// The core data of a pseudoatom entity.
 #[derive(Clone, Debug)]
@@ -117,11 +117,11 @@ impl Stored for Pseudoatom {
     type Data = PseudoatomData;
 }
 
-// impl<'m, M> View<'m, M, Pseudoatom> {
-// pub fn bonds(&self) -> &[Bond] {
-// &self.map.graph().data(self.id).unwrap().bonds
-// }
-// }
+impl<'m, M: AtomMap> View<'m, M, Pseudoatom> {
+    pub fn bonds(&self) -> &[Bond] {
+        &self.map.data(self.id).unwrap().bonds
+    }
+}
 
 /// The type of a bond e.g. covalent, ionic, hydrogen.
 ///
@@ -275,38 +275,38 @@ impl Stored for Bond {
     type Data = BondData;
 }
 
-// impl<'m, M> View<'m, M, Bond> {
-//     pub fn bond_type(&self) -> BondType {
-//         self.data().bond_type
-//     }
+impl<'m, M: AtomMap> View<'m, M, Bond> {
+    pub fn bond_type(&self) -> BondType {
+        self.data().bond_type
+    }
 
-//     /// Returns `true` if the bond type is covalent/dipolar, ionic, metallic, or
-//     /// the `OtherStrong` variant.
-//     ///
-//     /// Note that this excludes hydrogen bonds and σ-hole interactions, even though
-//     /// these can in some cases have considerable strength.
-//     pub fn is_strong(&self) -> bool {
-//         self.bond_type().is_strong()
-//     }
+    /// Returns `true` if the bond type is covalent/dipolar, ionic, metallic, or
+    /// the `OtherStrong` variant.
+    ///
+    /// Note that this excludes hydrogen bonds and σ-hole interactions, even though
+    /// these can in some cases have considerable strength.
+    pub fn is_strong(&self) -> bool {
+        self.bond_type().is_strong()
+    }
 
-//     /// Returns `true` if the bond type is covalent or dipolar.
-//     pub fn is_covalent(&self) -> bool {
-//         self.bond_type().is_covalent()
-//     }
+    /// Returns `true` if the bond type is covalent or dipolar.
+    pub fn is_covalent(&self) -> bool {
+        self.bond_type().is_covalent()
+    }
 
-//     /// Returns the order of a covalent bond, or `None` otherwise.
-//     ///
-//     /// A dipolar bond is considered covalent.
-//     pub fn order(&self) -> Option<f32> {
-//         match self.data().bond_type {
-//             BondType::Covalent { order } => Some(order),
-//             BondType::Dipolar { order } => Some(order),
-//             _ => None,
-//         }
-//     }
+    /// Returns the order of a covalent bond, or `None` otherwise.
+    ///
+    /// A dipolar bond is considered covalent.
+    pub fn order(&self) -> Option<f32> {
+        match self.data().bond_type {
+            BondType::Covalent { order } => Some(order),
+            BondType::Dipolar { order } => Some(order),
+            _ => None,
+        }
+    }
 
-//     pub fn partners(&self) -> [AnyBondable; 2] {
-//         let inner = self.data();
-//         [inner.start, inner.end]
-//     }
-// }
+    pub fn partners(&self) -> [AnyBondable; 2] {
+        let inner = self.data();
+        [inner.start, inner.end]
+    }
+}
