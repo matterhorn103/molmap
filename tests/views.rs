@@ -1,4 +1,4 @@
-use molmap::{self, Element, Map, atomic::AtomMap0, entities::Atom, view::All};
+use molmap::{self, Element, Map, atomic::AtomMap0, entities::Atom, entities::Selection::All};
 
 #[test]
 fn views_usage() {

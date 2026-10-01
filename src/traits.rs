@@ -14,7 +14,7 @@ use nalgebra as na;
 use slotmap::SlotMap;
 
 use crate::{
-    entities::{Entities, Entity, Kind},
+    entities::{Entities, Entity, Kind, Selection},
     error::*,
     view::*,
 };
