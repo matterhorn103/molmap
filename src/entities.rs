@@ -6,19 +6,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-mod id;
-
 use std::iter::FusedIterator;
 
-use id::Id;
 use slotmap::basic::Keys;
 
 use crate::error::*;
 
+mod id;
+use id::Id;
+
 /// The kind of an entity.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 #[repr(u8)]
-//#[non_exhaustive]
 pub enum EntityKind {
     Atom = 0x00,
     Bond = 0x01,
@@ -30,7 +29,7 @@ pub enum EntityKind {
 impl EntityKind {
     /// Returns the corresponding variant if `value` is a valid discriminant, or
     /// `None` otherwise.
-    pub const fn from_u8(value: u8) -> Option<Self> {
+    const fn from_u8(value: u8) -> Option<Self> {
         match value {
             0x00 => Some(Self::Atom),
             0x01 => Some(Self::Bond),
@@ -57,6 +56,12 @@ impl TryFrom<u8> for EntityKind {
     }
 }
 
+mod private {
+    /// A type to seal trait methods that should only be used within the module.
+    #[derive(Copy, Clone)]
+    pub struct Token;
+}
+
 /// A constituent member of a [`MolMap`] with associated data and relationships
 /// to other entities.
 ///
@@ -77,36 +82,33 @@ impl TryFrom<u8> for EntityKind {
 /// All entities have a unique ID.
 ///
 /// This trait is sealed and cannot be implemented outside of the crate.
-pub trait Entity: Copy + Clone + Eq {
+pub trait Entity: Copy + Clone {
     // It is important that this trait remains sealed! Any kinds of entity that
     // molmap doesn't know about will lead to problems. It being sealed is also
     // relied upon by traits that have this as a supertrait e.g. the entity
     // category traits (Bondable, Atomlike etc.).
     //
-    // What makes this trait sealed currently is the fact that Id is not
-    // nameable by other crates, so foreign types cannot implement new_unchecked
-    // or into_inner and therefore cannot implement the trait. It is therefore
-    // crucial that that remains the case i.e. the id module remains private and
-    // Id is not publicly re-exported anywhere.
+    // What makes this trait sealed currently:
+    // 1. `Id` is not nameable by other crates
+    // 2. `private::Token` is not nameable by other crates and it is not possible
+    //    to obtain one by any means other than construction
     //
-    // It's also very important that downstream code cannot create an entity of
-    // a specific kind from a generic Id without the discriminant being
-    // checked, so it is *essential* that new_unchecked not just cannot be
-    // *implemented* but also cannot be *called*. As long as Id stays
-    // unnameable, this is the case.
-    //
-    // It is fine for into_inner to be callable downstream and for an Id
-    // to be obtained, as long as nothing can be done with that Id.
+    // Foreign types cannot implement new_unchecked or into_inner and therefore
+    // cannot implement the trait. External code is also not able to access the
+    // inner Id in any way.
+
     /// Creates a new ID for the requested kind of entity without checking that
     /// the discriminant of the ID is correct for that kind.
-    fn new_unchecked(id: Id) -> Self;
+    #[doc(hidden)]
+    fn new_unchecked(id: Id, _: private::Token) -> Self;
 
     /// Returns the underlying unique 64-bit ID of the entity.
-    fn into_inner(self) -> Id;
+    #[doc(hidden)]
+    fn into_inner(self, _: private::Token) -> Id;
 
     /// Returns the corresponding kind of the entity.
     fn kind(&self) -> EntityKind {
-        self.into_inner().kind()
+        self.into_inner(private::Token).kind()
     }
 
     /// Upcasts the specific entity type to a dynamic type representing any entity.
@@ -114,7 +116,7 @@ pub trait Entity: Copy + Clone + Eq {
     /// The kind of the entity remains encoded in the ID itself and can be recovered
     /// dynamically at runtime using [`Entity::kind`] or [`resolve`].
     fn as_entity(self) -> AnyEntity {
-        AnyEntity(self.into_inner())
+        AnyEntity(self.into_inner(private::Token))
     }
 
     /// Returns the concrete type appropriate for the specific kind of entity, wrapped
@@ -135,32 +137,26 @@ pub trait Entity: Copy + Clone + Eq {
 
 /// An entity that may be of any kind.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub struct AnyEntity(pub(crate) Id);
+pub struct AnyEntity(Id);
 
 impl AnyEntity {
     pub fn resolve(self) -> ResolvedEntity {
         match self.kind() {
-            EntityKind::Atom => ResolvedEntity::Atom(Atom::new_unchecked(self.into_inner())),
-            EntityKind::Bond => ResolvedEntity::Bond(Bond::new_unchecked(self.into_inner())),
-            EntityKind::Pseudoatom => {
-                ResolvedEntity::Pseudoatom(Pseudoatom::new_unchecked(self.into_inner()))
-            }
-            EntityKind::Substituent => {
-                ResolvedEntity::Substituent(Substituent::new_unchecked(self.into_inner()))
-            }
-            EntityKind::Molecule => {
-                ResolvedEntity::Molecule(Molecule::new_unchecked(self.into_inner()))
-            }
+            EntityKind::Atom => ResolvedEntity::Atom(Atom(self.0)),
+            EntityKind::Bond => ResolvedEntity::Bond(Bond(self.0)),
+            EntityKind::Pseudoatom => ResolvedEntity::Pseudoatom(Pseudoatom(self.0)),
+            EntityKind::Substituent => ResolvedEntity::Substituent(Substituent(self.0)),
+            EntityKind::Molecule => ResolvedEntity::Molecule(Molecule(self.0)),
         }
     }
 }
 
 impl Entity for AnyEntity {
-    fn new_unchecked(id: Id) -> Self {
+    fn new_unchecked(id: Id, _: private::Token) -> Self {
         Self(id)
     }
 
-    fn into_inner(self) -> Id {
+    fn into_inner(self, _: private::Token) -> Id {
         self.0
     }
 }
@@ -181,19 +177,44 @@ pub enum ResolvedEntity {
     Molecule(Molecule) = EntityKind::Molecule as u8,
 }
 
-/// An iterator over entity IDs from one of various possible sources.
-pub enum Entities<'m, E: Kind> {
+/// A union type for iterators over entity IDs from various sources.
+enum EntitiesSource<'m, E: Kind> {
     Keys(Keys<'m, E::Key, E::Data>),
     Vec(std::vec::IntoIter<E>),
 }
 
+impl<'m, E: Kind> Iterator for EntitiesSource<'m, E> {
+    type Item = E;
+
+    fn next(&mut self) -> Option<E> {
+        match self {
+            Self::Keys(keys) => keys.next().map(E::from_key),
+            Self::Vec(ids) => ids.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::Keys(keys) => keys.size_hint(),
+            Self::Vec(ids) => ids.size_hint(),
+        }
+    }
+}
+
+impl<'m, E: Kind> ExactSizeIterator for EntitiesSource<'m, E> {}
+
+impl<'m, E: Kind> FusedIterator for EntitiesSource<'m, E> {}
+
+/// An iterator over entity IDs.
+pub struct Entities<'m, E: Kind>(EntitiesSource<'m, E>);
+
 impl<'m, E: Kind> Entities<'m, E> {
     pub(crate) fn from_keys(keys: Keys<'m, E::Key, E::Data>) -> Self {
-        Self::Keys(keys)
+        Self(EntitiesSource::Keys(keys))
     }
 
     pub(crate) fn from_vec(vec: Vec<E>) -> Self {
-        Self::Vec(vec.into_iter())
+        Self(EntitiesSource::Vec(vec.into_iter()))
     }
 }
 
@@ -201,17 +222,11 @@ impl<'m, E: Kind> Iterator for Entities<'m, E> {
     type Item = E;
 
     fn next(&mut self) -> Option<E> {
-        match self {
-            Entities::Keys(keys) => keys.next().map(E::from_key),
-            Entities::Vec(ids) => ids.next(),
-        }
+        self.0.next()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match self {
-            Entities::Keys(keys) => keys.size_hint(),
-            Entities::Vec(ids) => ids.size_hint(),
-        }
+        self.0.size_hint()
     }
 }
 
@@ -219,23 +234,50 @@ impl<'m, E: Kind> ExactSizeIterator for Entities<'m, E> {}
 
 impl<'m, E: Kind> FusedIterator for Entities<'m, E> {}
 
-/// A fundamental kind of entity in a graph, with a backing `SlotMap`.
-pub trait Keyed: Entity {
-    type Key: slotmap::Key + 'static;
+/// A selected set or subset of entities of a given kind.
+pub enum Selection<'m, E: Kind> {
+    All,
+    Iter(Box<dyn Iterator<Item = E> + 'm>),
+}
 
-    const KIND: EntityKind;
-
-    fn from_key(key: Self::Key) -> Self {
-        Self::new_unchecked(Id::from_key_data(Self::KIND, slotmap::Key::data(&key)))
-    }
-
-    fn to_key(self) -> Self::Key {
-        Self::Key::from(self.into_inner().to_key_data())
+impl<'m, E, I> From<I> for Selection<'m, E>
+where
+    E: Kind,
+    I: IntoIterator<Item = E>,
+    I::IntoIter: 'm,
+{
+    fn from(iterable: I) -> Self {
+        Selection::Iter(Box::new(iterable.into_iter()))
     }
 }
 
-mod keys {
+/// Items that must remain unnameable from outside the crate.
+mod internal {
+    use super::*;
     use slotmap::new_key_type;
+
+    /// A kind of entity whose ID is a key in a backing `SlotMap`.
+    pub trait Keyed: Entity {
+        type Key: slotmap::Key + 'static;
+
+        const KIND: EntityKind;
+
+        fn from_key(key: Self::Key) -> Self {
+            Self::new_unchecked(
+                Id::from_key_data(Self::KIND, slotmap::Key::data(&key)),
+                private::Token,
+            )
+        }
+
+        fn to_key(self) -> Self::Key {
+            Self::Key::from(self.into_inner(private::Token).to_key_data())
+        }
+    }
+
+    /// A kind of entity with a corresponding struct type to hold its core data.
+    pub trait Stored {
+        type Data: 'static;
+    }
 
     new_key_type! { pub struct AtomKey; }
     new_key_type! { pub struct BondKey; }
@@ -243,12 +285,7 @@ mod keys {
     new_key_type! { pub struct SubstituentKey; }
     new_key_type! { pub struct MoleculeKey; }
 }
-
-pub(crate) use keys::*;
-
-pub trait Stored {
-    type Data: 'static;
-}
+pub(crate) use internal::*;
 
 /// A basic, concrete kind of entity in a `MolMap`, backed by its own storage.
 ///
@@ -286,11 +323,11 @@ macro_rules! new_entity_kind {
             }
 
             impl Entity for $kind {
-                fn new_unchecked(id: Id) -> Self {
+                fn new_unchecked(id: Id, _: private::Token) -> Self {
                     Self(id)
                 }
 
-                fn into_inner(self) -> Id {
+                fn into_inner(self, _: private::Token) -> Id {
                     self.0
                 }
 
@@ -300,7 +337,7 @@ macro_rules! new_entity_kind {
 
                 #[inline]
                 fn to_resolved(self) -> ResolvedEntity {
-                    ResolvedEntity::$kind($kind::new_unchecked(self.into_inner()))
+                    ResolvedEntity::$kind($kind(self.0))
                 }
             }
 
@@ -319,7 +356,7 @@ macro_rules! new_entity_kind {
 
                 fn try_from(entity: AnyEntity) -> Result<Self, Self::Error> {
                     match entity.kind() {
-                        EntityKind::$kind => Ok(Self::new_unchecked(entity.into_inner())),
+                        EntityKind::$kind => Ok(Self(entity.0)),
                         _ => {
                             Err(crate::error::MolMapError::IncorrectEntityKind(
                                 entity.kind(),
@@ -408,7 +445,10 @@ pub trait Category: Entity {
     /// entity is not of the corresponding kind.
     fn downcast<E: Kind>(self) -> MolMapResult<E> {
         if self.kind() == E::KIND {
-            Ok(E::new_unchecked(self.into_inner()))
+            Ok(E::new_unchecked(
+                self.into_inner(private::Token),
+                private::Token,
+            ))
         } else {
             Err(crate::error::MolMapError::IncorrectEntityKind(
                 self.kind(),
@@ -449,7 +489,7 @@ macro_rules! define_category {
                 #[doc = ""]
                 #[doc = "The kind of the entity remains encoded in the ID itself and can be recovered dynamically at runtime using [`Entity::kind`] or [`resolve`]."]
                 fn [<as_ $category:lower>](self) -> [<Any $category>] {
-                    [<Any $category>](self.into_inner())
+                    [<Any $category>](self.into_inner(private::Token))
                 }
 
                 #[doc = "Returns the appropriate concrete entity type wrapped in an enum where the variant corresponds to its kind."]
@@ -478,18 +518,18 @@ macro_rules! define_category {
             impl [<Any $category>] {
                 pub fn resolve(self) -> [<Resolved $category>] {
                     match self.kind() {
-                        $(EntityKind::$kind => [<Resolved $category>]::$kind($kind::new_unchecked(self.0)),)+
+                        $(EntityKind::$kind => [<Resolved $category>]::$kind($kind(self.0)),)+
                         _ => unreachable!(),
                     }
                 }
             }
 
             impl Entity for [<Any $category>] {
-                fn new_unchecked(id: Id) -> Self {
+                fn new_unchecked(id: Id, _: private::Token) -> Self {
                     Self(id)
                 }
 
-                fn into_inner(self) -> Id {
+                fn into_inner(self, _: private::Token) -> Id {
                     self.0
                 }
             }
@@ -511,9 +551,9 @@ macro_rules! define_category {
                 #[doc = concat!("Reverses the resolution to afford the dynamic type representing any kind of [`", stringify!([<$category>]), "`] entity.")]
                 pub fn [<as_ $category:lower>](self) -> [<Any $category>] {
                     let inner = match self {
-                        $(Self::$kind(concrete) => concrete.into_inner(),)+
+                        $(Self::$kind(concrete) => concrete.0,)+
                     };
-                    [<Any $category>]::new_unchecked(inner)
+                    [<Any $category>](inner)
                 }
             }
 
@@ -545,7 +585,7 @@ macro_rules! define_category {
             $(
                 impl From<$kind> for [<Any $category>] {
                     fn from(entity: $kind) -> Self {
-                        Self::new_unchecked(entity.into_inner())
+                        Self(entity.0)
                     }
                 }
 
@@ -595,7 +635,7 @@ macro_rules! define_category {
 
                 fn try_from(entity: AnyEntity) -> Result<Self, Self::Error> {
                     match entity.kind() {
-                        $(EntityKind::$kind => Ok(Self::new_unchecked(entity.into_inner())),)+
+                        $(EntityKind::$kind => Ok(Self(entity.0)),)+
                         _ => {
                             Err(crate::error::MolMapError::IncorrectEntityKind(
                                 entity.kind(),
@@ -684,7 +724,7 @@ macro_rules! impl_subset {
 
             impl From<[<Any $A>]> for [<Any $B>] {
                 fn from(entity: [<Any $A>]) -> Self {
-                    Self::new_unchecked(entity.into_inner())
+                    Self(entity.0)
                 }
             }
 
@@ -724,10 +764,10 @@ mod tests {
     const PSEUDOATOM_RAW: u64 = 0x1_02_00000A; // version: 1, kind: Pseudoatom, idx: 10
     const MOLECULE_RAW: u64 = 0x1_1F_000001; // version: 1, kind: Molecule, idx: 1
 
-    const BOND: Bond = Bond(Id(NonZeroU64::new(BOND_RAW).unwrap()));
-    const ATOM: Atom = Atom(Id(NonZeroU64::new(ATOM_RAW).unwrap()));
-    const PSEUDOATOM: Pseudoatom = Pseudoatom(Id(NonZeroU64::new(PSEUDOATOM_RAW).unwrap()));
-    const MOLECULE: Molecule = Molecule(Id(NonZeroU64::new(MOLECULE_RAW).unwrap()));
+    const BOND: Bond = Bond(Id::from_raw(BOND_RAW).unwrap());
+    const ATOM: Atom = Atom(Id::from_raw(ATOM_RAW).unwrap());
+    const PSEUDOATOM: Pseudoatom = Pseudoatom(Id::from_raw(PSEUDOATOM_RAW).unwrap());
+    const MOLECULE: Molecule = Molecule(Id::from_raw(MOLECULE_RAW).unwrap());
 
     #[test]
     fn key_kind() {
@@ -759,9 +799,9 @@ mod tests {
 
     #[test]
     fn category_kind() {
-        let atomlike = AnyAtomlike::new_unchecked(ATOM.into_inner());
-        let fundamental = AnyFundamental::new_unchecked(BOND.into_inner());
-        let collection = AnyCollection::new_unchecked(MOLECULE.into_inner());
+        let atomlike = AnyAtomlike(ATOM.0);
+        let fundamental = AnyFundamental(BOND.0);
+        let collection = AnyCollection(MOLECULE.0);
         assert_eq!(atomlike.kind(), EntityKind::Atom);
         assert_eq!(fundamental.kind(), EntityKind::Bond);
         assert_eq!(collection.kind(), EntityKind::Molecule);
@@ -776,9 +816,9 @@ mod tests {
         // Conversion to an Atomlike is infallible
         let atomlike: AnyAtomlike = ATOM.into();
         // ID stays the same
-        assert_eq!(ATOM.into_inner(), atomlike.into_inner());
+        assert_eq!(ATOM.0, atomlike.0);
         // Can be converted back to keyed ID form without issue, still the same
-        assert_eq!(Atom::new_unchecked(atomlike.into_inner()), ATOM);
+        assert_eq!(Atom(atomlike.0), ATOM);
     }
 
     #[test]
@@ -809,7 +849,7 @@ mod tests {
         let bond = BOND;
         assert_eq!(
             AnyFundamental::from(bond),
-            AnyFundamental(Id(NonZeroU64::new(BOND_RAW).unwrap()))
+            AnyFundamental(Id::from_raw(BOND_RAW).unwrap())
         );
         assert_eq!(Bond::try_from(AnyFundamental::from(bond)).unwrap(), bond);
         // Molecule to Collection to Entity to Molecule should all work
@@ -824,22 +864,13 @@ mod tests {
     fn convert_between_categories() {
         let atom: AnyAtomlike = ATOM.into();
         let pseudoatom: AnyAtomlike = PSEUDOATOM.into();
-        assert_eq!(
-            AnyFundamental::from(atom),
-            AnyFundamental::new_unchecked(ATOM.into_inner())
-        );
+        assert_eq!(AnyFundamental::from(atom), AnyFundamental(ATOM.0));
         assert_eq!(
             AnyFundamental::from(pseudoatom),
-            AnyFundamental::new_unchecked(PSEUDOATOM.into_inner())
+            AnyFundamental(PSEUDOATOM.0)
         );
-        assert_eq!(
-            AnyBondable::from(atom),
-            AnyBondable::new_unchecked(ATOM.into_inner())
-        );
-        assert_eq!(
-            AnyBondable::from(pseudoatom),
-            AnyBondable::new_unchecked(PSEUDOATOM.into_inner())
-        );
+        assert_eq!(AnyBondable::from(atom), AnyBondable(ATOM.0));
+        assert_eq!(AnyBondable::from(pseudoatom), AnyBondable(PSEUDOATOM.0));
     }
 
     #[test]
