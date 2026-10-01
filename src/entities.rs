@@ -8,7 +8,10 @@
 
 mod id;
 
+use std::iter::FusedIterator;
+
 use id::Id;
+use slotmap::basic::Keys;
 
 use crate::error::*;
 
@@ -178,32 +181,43 @@ pub enum ResolvedEntity {
     Molecule(Molecule) = EntityKind::Molecule as u8,
 }
 
-///// An iterator over all of a given kind of entity in a map.
-//pub struct AllEntities<'m, E: Kind> {
-//    keys: Keys<'m, E::KEY, E::DATA>,
-//}
-//
-//impl<'m, E: Kind> AllEntities<'m, E> {
-//    pub(crate) fn from_keys(keys: Keys<'m, E::KEY, E::DATA>) -> Self {
-//        Self { keys }
-//    }
-//}
-//
-//impl<'m, E: Kind> Iterator for AllEntities<'m, E> {
-//    type Item = E;
-//
-//    fn next(&mut self) -> Option<Self::Item> {
-//        self.keys.next().map(|k| E::from_key(k))
-//    }
-//
-//    fn size_hint(&self) -> (usize, Option<usize>) {
-//        self.keys.size_hint()
-//    }
-//}
-//
-//impl<'a, E: Kind> ExactSizeIterator for AllEntities<'a, E> {}
-//
-//impl<'a, E: Kind> FusedIterator for AllEntities<'a, E> {}
+/// An iterator over entity IDs from one of various possible sources.
+pub enum Entities<'m, E: Kind> {
+    Keys(Keys<'m, E::Key, E::Data>),
+    Vec(std::vec::IntoIter<E>),
+}
+
+impl<'m, E: Kind> Entities<'m, E> {
+    pub(crate) fn from_keys(keys: Keys<'m, E::Key, E::Data>) -> Self {
+        Self::Keys(keys)
+    }
+
+    pub(crate) fn from_vec(vec: Vec<E>) -> Self {
+        Self::Vec(vec.into_iter())
+    }
+}
+
+impl<'m, E: Kind> Iterator for Entities<'m, E> {
+    type Item = E;
+
+    fn next(&mut self) -> Option<E> {
+        match self {
+            Entities::Keys(keys) => keys.next().map(E::from_key),
+            Entities::Vec(ids) => ids.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Entities::Keys(keys) => keys.size_hint(),
+            Entities::Vec(ids) => ids.size_hint(),
+        }
+    }
+}
+
+impl<'m, E: Kind> ExactSizeIterator for Entities<'m, E> {}
+
+impl<'m, E: Kind> FusedIterator for Entities<'m, E> {}
 
 /// A fundamental kind of entity in a graph, with a backing `SlotMap`.
 pub trait Keyed: Entity {

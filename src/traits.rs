@@ -14,7 +14,7 @@ use nalgebra as na;
 use slotmap::SlotMap;
 
 use crate::{
-    entities::{Entity, Kind},
+    entities::{Entities, Entity, Kind},
     error::*,
     view::*,
 };
@@ -90,12 +90,12 @@ pub trait Map: Sized {
     // Constructors
     // ------------
 
-    /// Creates an empty `MolMap`.
+    /// Creates an empty map.
     ///
     /// As the constituent `SlotMap`s are created with an initial capacity of 0,
     /// reallocations will occur frequently if many entities are subsequently inserted.
-    /// If you have an idea of approximately how large the `MolMap` needs to be, it is
-    /// recommended to use `MolMap.with_capacity` or `with_capacities` instead.
+    /// If you have an idea of approximately how large the map needs to be, it is
+    /// recommended to use `with_capacity` or `with_capacities` instead.
     fn new() -> Self;
 
     ///// Creates a new `MolMap` with the specified initial capacities for each kind of entity.
@@ -130,10 +130,14 @@ pub trait Map: Sized {
         self.graph().contains(entity)
     }
 
-    ///// Returns an iterator over all of a given kind of entity in the map.
-    //fn all<E: Kind>(&'_ self) -> AllEntities<'_, E> {
-    //    AllEntities::from_keys(self.core().keys::<E>())
-    //}
+    /// Returns an iterator over all of a given kind of entity in the map.
+    fn iter<E>(&'_ self) -> Entities<'_, E>
+    where
+        E: Kind,
+        Self::Graph: Store<E>,
+    {
+        Entities::from_keys(self.graph().keys())
+    }
 
     // Getters
     // -------
@@ -161,6 +165,9 @@ pub trait Map: Sized {
     /// Returns an iterator over views of the given entities, returning an error
     /// if any ID is invalid.
     ///
+    /// Pass [`Selection::All`] to get an iterator over views of all of the given
+    /// kind of entity (in which case the method is infallible).
+    ///
     /// This method is most useful for situations where it is important to have
     /// ensured all IDs are valid before beginning some operation involving them.
     ///
@@ -172,36 +179,33 @@ pub trait Map: Sized {
     ///
     /// Fails if any ID is invalid, in which case the error includes the first
     /// invalid ID encountered.
-    fn views<E, I>(&'_ self, entities: I) -> MolMapResult<Views<'_, Self, E>>
+    fn views<'m, E>(
+        &'m self,
+        selection: impl Into<Selection<'m, E>>,
+    ) -> MolMapResult<Views<'m, Self, E>>
     where
-        E: Entity,
-        I: IntoIterator<Item = E>,
+        E: Kind,
+        Self::Graph: Store<E>,
     {
-        let validated: Vec<E> = entities
-            .into_iter()
-            .map(|e| {
-                if self.contains(e) {
-                    Ok(e)
-                } else {
-                    Err(MolMapError::InvalidId(e.as_entity()))
-                }
-            })
-            // An iterator of Result<T, U> can be collected into Result<Vec<T>, U>
-            .collect::<MolMapResult<Vec<E>>>()?;
-        Ok(Views {
-            map: self,
-            ids: validated.into_iter(),
-        })
+        let ids: Entities<'m, E> = match selection.into() {
+            Selection::All => self.iter(),
+            Selection::Iter(iterator) => {
+                let validated: Vec<E> = iterator
+                    .into_iter()
+                    .map(|e| {
+                        if self.contains(e) {
+                            Ok(e)
+                        } else {
+                            Err(MolMapError::InvalidId(e.as_entity()))
+                        }
+                    })
+                    // An iterator of Result<T, U> can be collected into Result<Vec<T>, U>
+                    .collect::<MolMapResult<Vec<E>>>()?;
+                Entities::from_vec(validated)
+            }
+        };
+        Ok(Views { map: self, ids })
     }
-
-    ///// Returns an iterator over views of all of a given kind of entity in the map.
-    //fn all_views<E: Kind>(&'_ self) -> Views<'_, Self, E> {
-    //    let all: Vec<E> = self.all().collect();
-    //    Views {
-    //        map: self,
-    //        ids: all.into_iter(),
-    //    }
-    //}
 }
 
 // Any Map type automatically implements Store for the same set of entity types

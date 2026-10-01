@@ -39,6 +39,7 @@ use crate::{entities::*, traits::Store};
 //    does not consume the mutable view)
 
 /// An immutable view of an individual entity in a specific [`MolMap`].
+#[derive(Copy, Clone, Debug)]
 pub struct View<'m, M, E> {
     pub(crate) map: &'m M,
     pub(crate) id: E,
@@ -91,23 +92,26 @@ where
 }
 
 /// An iterator that yields an immutable view of each of a set of entities in turn.
-pub struct Views<'m, M, E> {
+pub struct Views<'m, M, E>
+where
+    E: Kind,
+{
     pub(crate) map: &'m M,
-    pub(crate) ids: std::vec::IntoIter<E>,
+    pub(crate) ids: Entities<'m, E>,
 }
 
 impl<'m, M, E> Views<'m, M, E>
 where
-    E: Entity,
+    E: Kind,
 {
-    pub fn ids(self) -> std::vec::IntoIter<E> {
+    pub fn ids(self) -> Entities<'m, E> {
         self.ids
     }
 }
 
 impl<'m, M, E> Iterator for Views<'m, M, E>
 where
-    E: Entity,
+    E: Kind,
 {
     type Item = View<'m, M, E>;
 
@@ -124,47 +128,66 @@ where
     }
 }
 
-impl<'m, M, E> ExactSizeIterator for Views<'m, M, E> where E: Entity {}
+impl<'m, M, E> ExactSizeIterator for Views<'m, M, E> where E: Kind {}
 
-impl<'m, M, E> FusedIterator for Views<'m, M, E> where E: Entity {}
+impl<'m, M, E> FusedIterator for Views<'m, M, E> where E: Kind {}
 
-///// An iterator that yields an immutable view of every one of a given kind of entity in a map in turn.
-//pub struct AllViews<'m, M, E>
-//where
-//    E: Kind,
-//{
-//    pub(crate) map: &'m M,
-//    pub(crate) ids: AllEntities<'m, E>,
-//}
-//
-//impl<'m, M, E> AllViews<'m, M, E>
-//where
-//    E: Kind,
-//{
-//    pub fn ids(self) -> AllEntities<'m, E> {
-//        self.ids
-//    }
-//}
-//
-//impl<'m, M, E> Iterator for AllViews<'m, M, E>
-//where
-//    E: Kind,
-//{
-//    type Item = View<'m, M, E>;
-//
-//    fn next(&mut self) -> Option<Self::Item> {
-//        if let Some(id) = self.ids.next() {
-//            Some(View { map: self.map, id })
-//        } else {
-//            None
-//        }
-//    }
-//
-//    fn size_hint(&self) -> (usize, Option<usize>) {
-//        self.ids.size_hint()
-//    }
-//}
-//
-//impl<'m, M, E> ExactSizeIterator for AllViews<'m, M, E> where E: Kind {}
-//
-//impl<'m, M, E> FusedIterator for AllViews<'m, M, E> where E: Kind {}
+pub enum Selection<'m, E: Kind> {
+    All,
+    Iter(Box<dyn Iterator<Item = E> + 'm>),
+}
+
+// Re-export the All variant
+pub use Selection::All;
+
+impl<'m, E, I> From<I> for Selection<'m, E>
+where
+    E: Kind,
+    I: IntoIterator<Item = E>,
+    I::IntoIter: 'm,
+{
+    fn from(iterable: I) -> Self {
+        Selection::Iter(Box::new(iterable.into_iter()))
+    }
+}
+
+/// An iterator that yields an immutable view of every one of a given kind of entity in a map in turn.
+pub struct AllViews<'m, M, E>
+where
+    E: Kind,
+{
+    pub(crate) map: &'m M,
+    pub(crate) ids: Entities<'m, E>,
+}
+
+impl<'m, M, E> AllViews<'m, M, E>
+where
+    E: Kind,
+{
+    pub fn ids(self) -> Entities<'m, E> {
+        self.ids
+    }
+}
+
+impl<'m, M, E> Iterator for AllViews<'m, M, E>
+where
+    E: Kind,
+{
+    type Item = View<'m, M, E>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(id) = self.ids.next() {
+            Some(View { map: self.map, id })
+        } else {
+            None
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.ids.size_hint()
+    }
+}
+
+impl<'m, M, E> ExactSizeIterator for AllViews<'m, M, E> where E: Kind {}
+
+impl<'m, M, E> FusedIterator for AllViews<'m, M, E> where E: Kind {}
