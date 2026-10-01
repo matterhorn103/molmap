@@ -56,10 +56,10 @@ where
 
 impl<'m, M, E> View<'m, M, E>
 where
-    M: Store<E>,
     E: Kind,
+    M: Store<E>,
 {
-    /// Returns a reference to the entity's data struct in the core [`MolGraph`]."
+    /// Returns a reference to the entity's data struct in the core graph.
     pub(crate) fn data(&self) -> &E::Data {
         self.map.data(self.id).unwrap()
     }

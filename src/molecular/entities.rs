@@ -11,7 +11,7 @@
 
 use std::collections::HashSet;
 
-use crate::{entities::*, error::MolMapResult, view::*};
+use crate::{entities::*, error::MolMapResult, molecular::MolGraph, view::*};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum SubstituentCentre {

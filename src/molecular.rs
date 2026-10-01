@@ -8,7 +8,7 @@
 
 pub(crate) mod entities;
 mod graph;
-//mod map;
+mod map;
 //mod three;
 //mod two;
 //mod zero;

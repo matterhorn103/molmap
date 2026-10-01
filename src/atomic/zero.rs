@@ -10,7 +10,7 @@ use crate::{
     atomic::{AtomMap, graph::AtomGraph},
     entities::*,
     error::*,
-    traits::Store,
+    traits::{Core, Graph, Store},
     view::*,
     *,
 };
@@ -20,21 +20,27 @@ pub struct AtomMap0 {
     pub(crate) graph: AtomGraph,
 }
 
-impl Map for AtomMap0 {
+impl Core for AtomMap0 {
     type Graph = AtomGraph;
 
-    fn graph(&self) -> &Self::Graph {
+    fn graph(&self) -> &AtomGraph {
         &self.graph
     }
 
-    fn graph_mut(&mut self) -> &mut Self::Graph {
+    fn graph_mut(&mut self) -> &mut AtomGraph {
         &mut self.graph
     }
+}
 
+impl Map for AtomMap0 {
     fn new() -> Self {
         Self {
             graph: AtomGraph::new(),
         }
+    }
+
+    fn contains<E: Entity>(&self, entity: E) -> bool {
+        self.graph.contains(entity)
     }
 }
 

@@ -60,7 +60,13 @@
 //! core structs e.g. [`BondType`] and [`SubstituentCentre`], but these may well
 //! be moved in the future.
 
-use crate::{Element, Pseudoelement, atomic::AtomMap, entities::*, traits::Store, view::View};
+use crate::{
+    Element, Pseudoelement,
+    atomic::{AtomGraph, AtomMap},
+    entities::*,
+    traits::Store,
+    view::View,
+};
 
 /// The core data of an atom entity.
 #[derive(Clone, Debug)]
@@ -82,17 +88,20 @@ impl Stored for Atom {
     type Data = AtomData;
 }
 
-impl<'m, M: AtomMap> View<'m, M, Atom> {
+impl<'m, M> View<'m, M, Atom>
+where
+    M: Store<Atom>,
+{
     pub fn element(&self) -> Element {
-        self.map.data(self.id).unwrap().element
+        self.data().element
     }
 
     pub fn symbol(&self) -> &str {
-        self.map.data(self.id).unwrap().element.symbol()
+        self.data().element.symbol()
     }
 
     pub fn bonds(&self) -> &[Bond] {
-        &self.map.data(self.id).unwrap().bonds
+        &self.data().bonds
     }
 }
 
@@ -117,9 +126,12 @@ impl Stored for Pseudoatom {
     type Data = PseudoatomData;
 }
 
-impl<'m, M: AtomMap> View<'m, M, Pseudoatom> {
+impl<'m, M> View<'m, M, Pseudoatom>
+where
+    M: Store<Pseudoatom>,
+{
     pub fn bonds(&self) -> &[Bond] {
-        &self.map.data(self.id).unwrap().bonds
+        &self.data().bonds
     }
 }
 
@@ -275,7 +287,10 @@ impl Stored for Bond {
     type Data = BondData;
 }
 
-impl<'m, M: AtomMap> View<'m, M, Bond> {
+impl<'m, M> View<'m, M, Bond>
+where
+    M: Store<Bond>,
+{
     pub fn bond_type(&self) -> BondType {
         self.data().bond_type
     }

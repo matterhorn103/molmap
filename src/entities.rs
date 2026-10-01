@@ -253,6 +253,8 @@ where
 
 /// Items that must remain unnameable from outside the crate.
 mod internal {
+    use crate::traits::Store;
+
     use super::*;
     use slotmap::new_key_type;
 
@@ -275,7 +277,7 @@ mod internal {
     }
 
     /// A kind of entity with a corresponding struct type to hold its core data.
-    pub trait Stored {
+    pub trait Stored: Keyed {
         type Data: 'static;
     }
 
@@ -292,7 +294,10 @@ pub(crate) use internal::*;
 /// All entity types implement [`Entity`] and one of either `Kind` or [`Category`],
 /// according to whether the kind is known statically or only obtainable dynamically.
 pub trait Kind: Entity + Keyed + Stored {}
-// Essentially the public-facing form of Keyed/Stored
+
+// Kind is essentially the public-facing form of Keyed/Stored
+// Blanket impl for whatever fulfils the conditions
+impl<E: Entity + Keyed + Stored> Kind for E {}
 
 macro_rules! new_entity_kind {
     (
@@ -340,8 +345,6 @@ macro_rules! new_entity_kind {
                     ResolvedEntity::$kind($kind(self.0))
                 }
             }
-
-            impl Kind for $kind {}
 
             // Conversion to and from AnyEntity
 

@@ -19,47 +19,87 @@ use crate::{
     view::*,
 };
 
-pub trait Store<E: Kind> {
-    /// Returns a reference to the `SlotMap` that holds the entity.
-    fn slotmap(&self) -> &SlotMap<E::Key, E::Data>;
+/// Traits that must remain unnameable from outside the crate.
+mod internal {
+    use crate::entities::Stored;
 
-    /// Returns a mutable reference to the `SlotMap` that holds the entity.
-    fn slotmap_mut(&mut self) -> &mut SlotMap<E::Key, E::Data>;
+    use super::*;
 
-    /// Returns a reference to the entity's data struct, or `None` if `entity` is invalid.
-    fn data(&self, entity: E) -> Option<&E::Data> {
-        self.slotmap().get(entity.to_key())
+    /// Implemented by graphs and maps to indicate that they store the specific
+    /// kind of entity and provide access to its underlying data struct.
+    pub trait Store<E: Kind> {
+        /// Returns a reference to the `SlotMap` that holds the entity.
+        fn slotmap(&self) -> &SlotMap<E::Key, E::Data>;
+
+        /// Returns a mutable reference to the `SlotMap` that holds the entity.
+        fn slotmap_mut(&mut self) -> &mut SlotMap<E::Key, E::Data>;
+
+        /// Returns a reference to the entity's data struct, or `None` if `entity` is invalid.
+        fn data(&self, entity: E) -> Option<&E::Data> {
+            self.slotmap().get(entity.to_key())
+        }
+
+        /// Returns a mutable reference to the entity's data struct, or `None` if `entity` is invalid.
+        fn data_mut(&mut self, entity: E) -> Option<&mut E::Data> {
+            self.slotmap_mut().get_mut(entity.to_key())
+        }
+
+        /// Returns an iterator over all the keys of a given kind of entity in the map.
+        fn keys(&'_ self) -> slotmap::basic::Keys<'_, E::Key, E::Data> {
+            self.slotmap().keys()
+        }
     }
 
-    /// Returns a mutable reference to the entity's data struct, or `None` if `entity` is invalid.
-    fn data_mut(&mut self, entity: E) -> Option<&mut E::Data> {
-        self.slotmap_mut().get_mut(entity.to_key())
+    impl<E, M> Store<E> for M
+    where
+        E: Kind,
+        M: Map,
+        M::Graph: Store<E>,
+    {
+        fn slotmap(&self) -> &SlotMap<<E>::Key, <E>::Data> {
+            self.graph().slotmap()
+        }
+
+        fn slotmap_mut(&mut self) -> &mut SlotMap<<E>::Key, <E>::Data> {
+            self.graph_mut().slotmap_mut()
+        }
     }
 
-    /// Returns an iterator over all the keys of a given kind of entity in the map.
-    fn keys(&'_ self) -> slotmap::basic::Keys<'_, E::Key, E::Data> {
-        self.slotmap().keys()
-    }
-}
-
-/// A private struct providing core storage for a [`Map`] type.
-///
-/// Each `Map` type holds a corresponding core `Graph` type, but they are not
-/// meant for downstream use. Generally, a zero-dimensional variant is provided
-/// to provide a pure-graph form for users e.g. [`AtomMap0`], [`MolMap0`].
-///
-/// In general, the methods of each `Graph` type should be small in scope and
-/// efficient so that the higher maps can combine them to create a nice public API.
-/// The methods should do relatively little checking and validation, with the
-/// higher maps responsible for careful usage. In particular, all IDs should be
-/// assumed to be valid.
-pub trait Graph {
-    /// Checks if the graph currently contains the given entity.
+    /// The internal core of a [`Map`] type that holds the data and core graph
+    /// and exposes an API suitable for use only within the crate.
     ///
-    /// This method must be flexible and able to do the check for any Entity type,
-    /// not just ones actually in the map, and including category types.
-    fn contains<E: Entity>(&self, entity: E) -> bool;
+    /// Each `Map` type holds a corresponding core `Graph` type, but they are not
+    /// meant for downstream use. However, a zero-dimensional variant is provided
+    /// at each layer that provides a pure-graph form for users e.g. [`AtomMap0`],
+    /// [`MolMap0`].
+    ///
+    /// In general, the methods of each `Graph` type should be small in scope and
+    /// efficient so that the higher maps can combine them to create a nice public API.
+    /// In particular, IDs given as arguments are not checked before carrying out
+    /// operations, and are assumed to be valid, and the map types are responsible
+    /// for careful usage. Other things are generally still checked, but in some
+    /// appropriate cases `unchecked_*` versions of methods are available where
+    /// efficiency gains are possible in exchange for decreased caution.
+    pub trait Graph {
+        /// Checks if the graph currently contains the given entity.
+        ///
+        /// This method must be flexible and able to do the check for any Entity type,
+        /// not just ones actually in the map, and including category types.
+        fn contains<E: Entity>(&self, entity: E) -> bool;
+    }
+
+    pub trait Core {
+        type Graph: Graph;
+
+        /// Provides access to the core graph.
+        fn graph(&self) -> &Self::Graph;
+
+        /// Provides mutable access to the core graph.
+        fn graph_mut(&mut self) -> &mut Self::Graph;
+    }
 }
+// Re-export for **crate-internal** use
+pub(crate) use internal::*;
 
 /// An arena-like data structure to represent a set of chemical entities, their
 /// properties, and the relationships between them, with or without spatial positions.
@@ -75,18 +115,7 @@ pub trait Graph {
 /// concrete map type.
 ///
 /// This trait is sealed and is not intended for implementation outside of `molmap`.
-pub trait Map: Sized {
-    // Graph access
-    // ------------
-
-    type Graph: Graph;
-
-    /// Provides access to the core graph.
-    fn graph(&self) -> &Self::Graph;
-
-    /// Provides mutable access to the core graph.
-    fn graph_mut(&mut self) -> &mut Self::Graph;
-
+pub trait Map: Core + Sized {
     // Constructors
     // ------------
 
@@ -126,17 +155,18 @@ pub trait Map: Sized {
     ///
     /// This method is flexible and able to do the check for any [`Entity`] type,
     /// not just ones actually in the map, and including category types.
-    fn contains<E: Entity>(&self, entity: E) -> bool {
-        self.graph().contains(entity)
-    }
+    fn contains<E: Entity>(&self, entity: E) -> bool;
+    //{
+    //self.graph().contains(entity)
+    //}
 
     /// Returns an iterator over all of a given kind of entity in the map.
     fn iter<E>(&'_ self) -> Entities<'_, E>
     where
         E: Kind,
-        Self::Graph: Store<E>,
+        Self: Store<E>,
     {
-        Entities::from_keys(self.graph().keys())
+        Entities::from_keys(self.keys())
     }
 
     // Getters
@@ -185,7 +215,7 @@ pub trait Map: Sized {
     ) -> MolMapResult<Views<'m, Self, E>>
     where
         E: Kind,
-        Self::Graph: Store<E>,
+        Self: Store<E>,
     {
         let ids: Entities<'m, E> = match selection.into() {
             Selection::All => self.iter(),
@@ -205,23 +235,6 @@ pub trait Map: Sized {
             }
         };
         Ok(Views { map: self, ids })
-    }
-}
-
-// Any Map type automatically implements Store for the same set of entity types
-// that the inner graph implements it for
-impl<E, M> Store<E> for M
-where
-    E: Kind,
-    M: Map,
-    M::Graph: Store<E>,
-{
-    fn slotmap(&self) -> &SlotMap<<E>::Key, <E>::Data> {
-        self.graph().slotmap()
-    }
-
-    fn slotmap_mut(&mut self) -> &mut SlotMap<<E>::Key, <E>::Data> {
-        self.graph_mut().slotmap_mut()
     }
 }
 

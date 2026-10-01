@@ -20,9 +20,9 @@ use crate::{
 
 #[derive(Clone, Debug, Default)]
 pub struct AtomGraph {
-    pub(super) atoms: SlotMap<AtomKey, AtomData>,
-    pub(super) pseudoatoms: SlotMap<PseudoatomKey, PseudoatomData>,
-    pub(super) bonds: SlotMap<BondKey, BondData>,
+    atoms: SlotMap<AtomKey, AtomData>,
+    pseudoatoms: SlotMap<PseudoatomKey, PseudoatomData>,
+    bonds: SlotMap<BondKey, BondData>,
 }
 
 macro_rules! impl_store {

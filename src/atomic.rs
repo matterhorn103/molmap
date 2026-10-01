@@ -14,8 +14,8 @@ mod two;
 mod zero;
 
 pub(crate) use graph::AtomGraph;
-pub(crate) use map::AtomMap;
 
+pub use map::AtomMap;
 pub use three::AtomMap3;
 pub use two::AtomMap2;
 pub use zero::AtomMap0;
