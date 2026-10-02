@@ -27,6 +27,8 @@ impl Spatial for AtomMap3 {
 
     type Dim = na::Const<3>;
 
+    type Scalar = f64;
+
     type Point = na::Point3<f64>;
 
     type Vector = na::Vector3<f64>;

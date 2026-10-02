@@ -64,7 +64,7 @@ use crate::{
     Element, Pseudoelement,
     atomic::{AtomGraph, AtomMap},
     entities::*,
-    traits::Store,
+    traits::Stores,
     view::View,
 };
 
@@ -90,7 +90,7 @@ impl Stored for Atom {
 
 impl<'m, M> View<'m, M, Atom>
 where
-    M: Store<Atom>,
+    M: Stores<Atom>,
 {
     pub fn element(&self) -> Element {
         self.data().element
@@ -128,7 +128,7 @@ impl Stored for Pseudoatom {
 
 impl<'m, M> View<'m, M, Pseudoatom>
 where
-    M: Store<Pseudoatom>,
+    M: Stores<Pseudoatom>,
 {
     pub fn bonds(&self) -> &[Bond] {
         &self.data().bonds
@@ -289,7 +289,7 @@ impl Stored for Bond {
 
 impl<'m, M> View<'m, M, Bond>
 where
-    M: Store<Bond>,
+    M: Stores<Bond>,
 {
     pub fn bond_type(&self) -> BondType {
         self.data().bond_type

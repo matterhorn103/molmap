@@ -15,7 +15,7 @@ use super::entities::*;
 use crate::{
     Element, Pseudoelement,
     entities::*,
-    traits::{Graph, Store},
+    traits::{Graph, Stores},
 };
 
 #[derive(Clone, Debug, Default)]
@@ -25,9 +25,9 @@ pub struct AtomGraph {
     bonds: SlotMap<BondKey, BondData>,
 }
 
-macro_rules! impl_store {
+macro_rules! impl_stores {
     ($kind: ident, $attr: ident) => {
-        impl Store<$kind> for AtomGraph {
+        impl Stores<$kind> for AtomGraph {
             fn slotmap(&self) -> &SlotMap<<$kind as Keyed>::Key, <$kind as Stored>::Data> {
                 &self.$attr
             }
@@ -40,21 +40,21 @@ macro_rules! impl_store {
         }
     };
 }
-impl_store!(Atom, atoms);
-impl_store!(Bond, bonds);
-impl_store!(Pseudoatom, pseudoatoms);
+impl_stores!(Atom, atoms);
+impl_stores!(Bond, bonds);
+impl_stores!(Pseudoatom, pseudoatoms);
 
 impl Graph for AtomGraph {
     fn contains<E: Entity>(&self, entity: E) -> bool {
         match entity.to_resolved() {
             ResolvedEntity::Atom(atom) => {
-                <AtomGraph as Store<Atom>>::slotmap(self).contains_key(atom.to_key())
+                <AtomGraph as Stores<Atom>>::slotmap(self).contains_key(atom.to_key())
             }
             ResolvedEntity::Bond(bond) => {
-                <AtomGraph as Store<Bond>>::slotmap(self).contains_key(bond.to_key())
+                <AtomGraph as Stores<Bond>>::slotmap(self).contains_key(bond.to_key())
             }
             ResolvedEntity::Pseudoatom(pseudoatom) => {
-                <AtomGraph as Store<Pseudoatom>>::slotmap(self).contains_key(pseudoatom.to_key())
+                <AtomGraph as Stores<Pseudoatom>>::slotmap(self).contains_key(pseudoatom.to_key())
             }
             _ => false,
         }
@@ -238,15 +238,15 @@ pub(crate) mod tests {
         let g = AtomGraph::new();
         // Make sure that the generic slotmap method returns a reference to the appropriate slotmap
         assert!(std::ptr::eq(
-            <AtomGraph as Store<Atom>>::slotmap(&g),
+            <AtomGraph as Stores<Atom>>::slotmap(&g),
             &g.atoms
         ));
         assert!(std::ptr::eq(
-            <AtomGraph as Store<Bond>>::slotmap(&g),
+            <AtomGraph as Stores<Bond>>::slotmap(&g),
             &g.bonds
         ));
         assert!(std::ptr::eq(
-            <AtomGraph as Store<Pseudoatom>>::slotmap(&g),
+            <AtomGraph as Stores<Pseudoatom>>::slotmap(&g),
             &g.pseudoatoms
         ));
     }

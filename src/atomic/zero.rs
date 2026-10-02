@@ -10,7 +10,7 @@ use crate::{
     atomic::{AtomMap, graph::AtomGraph},
     entities::*,
     error::*,
-    traits::{Core, Graph, Store},
+    traits::{CoreGraph, Graph, Stores},
     view::*,
     *,
 };
@@ -20,7 +20,7 @@ pub struct AtomMap0 {
     pub(crate) graph: AtomGraph,
 }
 
-impl Core for AtomMap0 {
+impl CoreGraph for AtomMap0 {
     type Graph = AtomGraph;
 
     fn graph(&self) -> &AtomGraph {

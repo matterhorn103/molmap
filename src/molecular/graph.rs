@@ -17,7 +17,7 @@ use crate::{
     atomic::AtomGraph,
     entities::*,
     error::{MolMapError, MolMapResult},
-    traits::Store,
+    traits::Stores,
 };
 
 /// An arena-like data structure to represent a set of chemical entities,
@@ -40,10 +40,10 @@ pub struct MolGraph {
     molecules: SlotMap<MoleculeKey, MoleculeData>,
 }
 
-impl<E> Store<E> for MolGraph
+impl<E> Stores<E> for MolGraph
 where
     E: Kind,
-    AtomGraph: Store<E>,
+    AtomGraph: Stores<E>,
 {
     fn slotmap(&self) -> &SlotMap<<E>::Key, <E>::Data> {
         self.inner.slotmap()
@@ -54,9 +54,9 @@ where
     }
 }
 
-macro_rules! impl_store {
+macro_rules! impl_stores {
     ($kind: ident, $attr: ident) => {
-        impl Store<$kind> for MolGraph {
+        impl Stores<$kind> for MolGraph {
             fn slotmap(&self) -> &SlotMap<<$kind as Keyed>::Key, <$kind as Stored>::Data> {
                 &self.$attr
             }
@@ -69,8 +69,8 @@ macro_rules! impl_store {
         }
     };
 }
-impl_store!(Substituent, substituents);
-impl_store!(Molecule, molecules);
+impl_stores!(Substituent, substituents);
+impl_stores!(Molecule, molecules);
 
 /// Constructor methods.
 impl MolGraph {

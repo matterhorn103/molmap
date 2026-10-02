@@ -253,7 +253,7 @@ where
 
 /// Items that must remain unnameable from outside the crate.
 mod internal {
-    use crate::traits::Store;
+    use crate::traits::Stores;
 
     use super::*;
     use slotmap::new_key_type;

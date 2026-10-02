@@ -9,6 +9,7 @@
 pub(crate) mod entities;
 mod graph;
 mod map;
+mod spatial;
 mod three;
 mod two;
 mod zero;

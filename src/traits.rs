@@ -27,7 +27,7 @@ mod internal {
 
     /// Implemented by graphs and maps to indicate that they store the specific
     /// kind of entity and provide access to its underlying data struct.
-    pub trait Store<E: Kind> {
+    pub trait Stores<E: Kind> {
         /// Returns a reference to the `SlotMap` that holds the entity.
         fn slotmap(&self) -> &SlotMap<E::Key, E::Data>;
 
@@ -50,11 +50,11 @@ mod internal {
         }
     }
 
-    impl<E, M> Store<E> for M
+    impl<E, M> Stores<E> for M
     where
         E: Kind,
         M: Map,
-        M::Graph: Store<E>,
+        M::Graph: Stores<E>,
     {
         fn slotmap(&self) -> &SlotMap<<E>::Key, <E>::Data> {
             self.graph().slotmap()
@@ -63,6 +63,21 @@ mod internal {
         fn slotmap_mut(&mut self) -> &mut SlotMap<<E>::Key, <E>::Data> {
             self.graph_mut().slotmap_mut()
         }
+    }
+
+    /// Implemented by graphs and maps to indicate that they store positions for
+    /// a specific kind of entity and provide access to the data point.
+    pub trait StoresPosition<E: Kind>: Spatial {
+        /// Returns a reference to the position of the entity, or `None` if `entity` is invalid.
+        fn position(&self, entity: E) -> Option<&Self::Point>;
+
+        /// Sets the position of the entity.
+        ///
+        /// This should not panic – if the entity is not in the map, nothing happens.
+        ///
+        /// Can silently fail and return `None` if the entity is no longer valid.
+        /// Returns `None` if the entity did not have a position previously, the old value otherwise.
+        fn set_position(&mut self, entity: E, new: Self::Point) -> Option<Self::Point>;
     }
 
     /// The internal core of a [`Map`] type that holds the data and core graph
@@ -88,7 +103,9 @@ mod internal {
         fn contains<E: Entity>(&self, entity: E) -> bool;
     }
 
-    pub trait Core {
+    /// A trait required of all implementors of [`Map`] in order to provide access
+    /// (internally) to their core graph.
+    pub trait CoreGraph {
         type Graph: Graph;
 
         /// Provides access to the core graph.
@@ -115,7 +132,7 @@ pub(crate) use internal::*;
 /// concrete map type.
 ///
 /// This trait is sealed and is not intended for implementation outside of `molmap`.
-pub trait Map: Core + Sized {
+pub trait Map: CoreGraph + Sized {
     // Constructors
     // ------------
 
@@ -161,10 +178,10 @@ pub trait Map: Core + Sized {
     //}
 
     /// Returns an iterator over all of a given kind of entity in the map.
-    fn iter<E>(&'_ self) -> Entities<'_, E>
+    fn entities<E>(&'_ self) -> Entities<'_, E>
     where
         E: Kind,
-        Self: Store<E>,
+        Self: Stores<E>,
     {
         Entities::from_keys(self.keys())
     }
@@ -215,10 +232,10 @@ pub trait Map: Core + Sized {
     ) -> MolMapResult<Views<'m, Self, E>>
     where
         E: Kind,
-        Self: Store<E>,
+        Self: Stores<E>,
     {
         let ids: Entities<'m, E> = match selection.into() {
-            Selection::All => self.iter(),
+            Selection::All => self.entities(),
             Selection::Iter(iterator) => {
                 let validated: Vec<E> = iterator
                     .into_iter()
@@ -243,6 +260,8 @@ pub trait Spatial {
 
     type Dim: na::DimName;
 
+    type Scalar: na::Scalar;
+
     type Point: Copy
         + Clone
         + PartialEq
@@ -260,17 +279,17 @@ pub trait Spatial {
         + Default
         + std::ops::Add<Output = Self::Vector>
         + std::ops::Sub<Output = Self::Vector>
-        + std::ops::Mul<f64, Output = Self::Vector>
-        + std::ops::Div<f64, Output = Self::Vector>
+        + std::ops::Mul<Self::Scalar, Output = Self::Vector>
+        + std::ops::Div<Self::Scalar, Output = Self::Vector>
         + std::ops::Neg<Output = Self::Vector>;
 }
 
 pub trait TwoDimensional:
-    Spatial<Dim = na::U2, Point = na::Point2<f64>, Vector = na::Vector2<f64>>
+    Spatial<Dim = na::U2, Scalar = f64, Point = na::Point2<f64>, Vector = na::Vector2<f64>>
 {
 }
 
 pub trait ThreeDimensional:
-    Spatial<Dim = na::U3, Point = na::Point3<f64>, Vector = na::Vector3<f64>>
+    Spatial<Dim = na::U3, Scalar = f64, Point = na::Point3<f64>, Vector = na::Vector3<f64>>
 {
 }
