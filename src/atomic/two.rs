@@ -6,17 +6,33 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use nalgebra::{self as na, Point2, SVector, Vector2};
+use nalgebra as na;
+use nalgebra::{Point2, SVector, Vector2};
 use slotmap::SecondaryMap;
 
 use super::AtomGraph;
 
-use crate::{BondType, Element, Pseudoelement, entities::*, error::*, traits::*, view::*};
+use crate::{
+    BondType, Element, Pseudoelement, atomic::spatial::mean_point, entities::*, error::*,
+    traits::*, view::*,
+};
 
+/// A map holding only fundamental entities and their two-dimensional positions.
+#[derive(Clone, Debug, Default)]
 pub struct AtomMap2 {
     graph: AtomGraph,
-    atom_positions: SecondaryMap<AtomKey, na::Point2<f64>>,
-    pseudoatom_positions: SecondaryMap<PseudoatomKey, na::Point2<f64>>,
+    atom_positions: SecondaryMap<AtomKey, Point2<f64>>,
+    pseudoatom_positions: SecondaryMap<PseudoatomKey, Point2<f64>>,
+}
+
+impl AtomMap2 {
+    pub fn new() -> Self {
+        Self {
+            graph: AtomGraph::new(),
+            atom_positions: SecondaryMap::new(),
+            pseudoatom_positions: SecondaryMap::new(),
+        }
+    }
 }
 
 impl CoreGraph for AtomMap2 {
@@ -32,14 +48,6 @@ impl CoreGraph for AtomMap2 {
 }
 
 impl Map for AtomMap2 {
-    fn new() -> Self {
-        Self {
-            graph: AtomGraph::new(),
-            atom_positions: SecondaryMap::new(),
-            pseudoatom_positions: SecondaryMap::new(),
-        }
-    }
-
     fn contains<E: Entity>(&self, entity: E) -> bool {
         self.graph.contains(entity)
     }
@@ -52,9 +60,9 @@ impl Spatial for AtomMap2 {
 
     type Scalar = f64;
 
-    type Point = na::Point2<f64>;
+    type Point = Point2<f64>;
 
-    type Vector = na::Vector2<f64>;
+    type Vector = Vector2<f64>;
 }
 
 impl TwoDimensional for AtomMap2 {}
@@ -229,6 +237,33 @@ impl AtomMap2 {
     pub(crate) fn bond_vector(&self, bond: Bond) -> Vector2<f64> {
         self.bond_terminus(bond) - self.bond_origin(bond)
     }
+
+    /// Calculates the unweighted geometric centre of the specified atoms and
+    /// pseudoatoms.
+    ///
+    /// # Errors
+    ///
+    /// Fails (returning [`MolMapError::InvalidId`]) if any of the atomlikes are not in
+    /// the map.
+    ///
+    /// Fails (returning [`MolMapError::EmptyIterator`]) if the provided iterator is
+    /// empty.
+    pub fn centroid(
+        &self,
+        atomlikes: impl IntoIterator<Item = AnyAtomlike>,
+    ) -> MolMapResult<Point2<f64>> {
+        let positions = atomlikes
+            .into_iter()
+            .map(|x| {
+                if self.contains(x) {
+                    Ok(self.atomlike_position(x))
+                } else {
+                    Err(MolMapError::InvalidId(x.as_entity()))
+                }
+            })
+            .collect::<MolMapResult<Vec<&Point2<f64>>>>()?;
+        mean_point(positions).ok_or(MolMapError::EmptyIterator)
+    }
 }
 
 impl StoresPosition<Atom> for AtomMap2 {
@@ -326,28 +361,28 @@ impl<'m> View<'m, AtomMap2, Bond> {
 
 #[cfg(test)]
 #[allow(unused)]
-pub(crate) mod tests {
+mod tests {
     use super::*;
 
     #[test]
     fn add_atom() {
         let mut am = AtomMap2::new();
         assert_eq!(am.entities::<Atom>().count(), 0);
-        let h1 = am.add_atom(Element::H, na::Point2::new(1.0, 2.0));
+        let h1 = am.add_atom(Element::H, Point2::new(1.0, 2.0));
         assert_eq!(am.entities::<Atom>().count(), 1);
         // Confirm that the atom positions also have data for a single atom
         assert_eq!(am.atom_positions.len(), 1);
         // Confirm that the atom position can be accessed
         assert_eq!(
             am.atom_positions.get(h1.to_key()).unwrap().clone(),
-            na::Point2::new(1.0, 2.0)
+            Point2::new(1.0, 2.0)
         );
     }
 
     #[test]
     fn delete_atom() {
         let mut am = AtomMap2::new();
-        let h1 = am.add_atom(Element::H, na::Point2::new(1.0, 2.0));
+        let h1 = am.add_atom(Element::H, Point2::new(1.0, 2.0));
         assert_eq!(am.entities::<Atom>().count(), 1);
         assert_eq!(am.atom_positions.len(), 1);
         am.view_mut(h1).unwrap().delete();

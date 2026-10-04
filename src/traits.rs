@@ -136,13 +136,13 @@ pub trait Map: CoreGraph + Sized {
     // Constructors
     // ------------
 
-    /// Creates an empty map.
-    ///
-    /// As the constituent `SlotMap`s are created with an initial capacity of 0,
-    /// reallocations will occur frequently if many entities are subsequently inserted.
-    /// If you have an idea of approximately how large the map needs to be, it is
-    /// recommended to use `with_capacity` or `with_capacities` instead.
-    fn new() -> Self;
+    ///// Creates an empty map.
+    /////
+    ///// As the constituent `SlotMap`s are created with an initial capacity of 0,
+    ///// reallocations will occur frequently if many entities are subsequently inserted.
+    ///// If you have an idea of approximately how large the map needs to be, it is
+    ///// recommended to use `with_capacity` or `with_capacities` instead.
+    //fn new() -> Self;
 
     ///// Creates a new `MolMap` with the specified initial capacities for each kind of entity.
     //fn with_capacities(

@@ -18,6 +18,7 @@ use crate::{
     traits::{Graph, Stores},
 };
 
+/// The internal core of an [`AtomMap`] type.
 #[derive(Clone, Debug, Default)]
 pub struct AtomGraph {
     atoms: SlotMap<AtomKey, AtomData>,

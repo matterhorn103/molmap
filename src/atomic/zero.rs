@@ -15,9 +15,18 @@ use crate::{
     *,
 };
 
+/// A map holding only fundamental entities in a pure-graph representation.
 #[derive(Clone, Debug, Default)]
 pub struct AtomMap0 {
     pub(crate) graph: AtomGraph,
+}
+
+impl AtomMap0 {
+    pub fn new() -> Self {
+        Self {
+            graph: AtomGraph::new(),
+        }
+    }
 }
 
 impl CoreGraph for AtomMap0 {
@@ -33,12 +42,6 @@ impl CoreGraph for AtomMap0 {
 }
 
 impl Map for AtomMap0 {
-    fn new() -> Self {
-        Self {
-            graph: AtomGraph::new(),
-        }
-    }
-
     fn contains<E: Entity>(&self, entity: E) -> bool {
         self.graph.contains(entity)
     }
