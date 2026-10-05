@@ -7,7 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use nalgebra as na;
-use nalgebra::{Point3, SVector, Vector3};
+use nalgebra::{Point3, Vector3};
 use slotmap::SecondaryMap;
 
 use super::AtomGraph;
@@ -19,8 +19,8 @@ use crate::{BondType, Element, Pseudoelement, entities::*, error::*, traits::*, 
 #[derive(Clone, Debug, Default)]
 pub struct AtomMap3 {
     graph: AtomGraph,
-    atom_positions: SecondaryMap<AtomKey, na::Point3<f64>>,
-    pseudoatom_positions: SecondaryMap<PseudoatomKey, na::Point3<f64>>,
+    atom_positions: SecondaryMap<AtomKey, Point3<f64>>,
+    pseudoatom_positions: SecondaryMap<PseudoatomKey, Point3<f64>>,
 }
 
 impl AtomMap3 {

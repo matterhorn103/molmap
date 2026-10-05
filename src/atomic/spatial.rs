@@ -9,15 +9,14 @@
 //! Functionality generic over any spatial `AtomMap`.
 
 use nalgebra as na;
-use nalgebra::{Point, SVector};
 
 /// Calculates the mean position from a set of positions, or `None` if the iterator is empty.
-pub(crate) fn mean_point<'a, I, const D: usize>(positions: I) -> Option<Point<f64, D>>
+pub(crate) fn mean_point<'a, I, const D: usize>(positions: I) -> Option<na::Point<f64, D>>
 where
-    I: IntoIterator<Item = &'a Point<f64, D>>,
+    I: IntoIterator<Item = &'a na::Point<f64, D>>,
 {
     let mut count: u32 = 0;
-    let mut sum: SVector<f64, D> = SVector::zeros();
+    let mut sum: na::SVector<f64, D> = na::SVector::zeros();
     for pos in positions {
         count += 1;
         sum += pos.coords
@@ -26,6 +25,6 @@ where
         None
     } else {
         let avg = sum / f64::from(count);
-        Some(Point::from(avg))
+        Some(na::Point::from(avg))
     }
 }

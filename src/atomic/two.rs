@@ -7,7 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use nalgebra as na;
-use nalgebra::{Point2, SVector, Vector2};
+use nalgebra::{Point2, Vector2};
 use slotmap::SecondaryMap;
 
 use super::AtomGraph;
