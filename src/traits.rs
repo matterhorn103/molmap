@@ -17,6 +17,7 @@ use crate::{
     entities::{Entities, Entity, Kind, Selection},
     error::*,
     geometry::*,
+    units::Unit,
     view::*,
 };
 
@@ -262,8 +263,8 @@ pub trait Spatial {
     /// The dimensionality of the map, as a type.
     type DimName: na::DimName;
 
-    ///// The dimensionality of the map, as an integer.
-    //const DIM: usize = <Self::DimName as na::DimName>::DIM;
+    /// The unit represented by a length of 1 in the map.
+    type Unit: Unit;
 
     /// The type of a position in the map.
     type Point: Copy

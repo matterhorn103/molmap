@@ -8,6 +8,8 @@
 
 //! Functionality generic over any spatial `AtomMap`.
 
+use std::marker::PhantomData;
+
 use nalgebra as na;
 use slotmap::SecondaryMap;
 
@@ -19,28 +21,31 @@ use crate::{
     error::*,
     geometry::{self, Point, Vector},
     traits::*,
+    units::Unit,
     view::*,
 };
 
 /// A map holding only fundamental entities and their positions in `D`-dimensional space.
 #[derive(Clone, Debug, Default)]
-pub struct SpatialAtomMap<const D: usize> {
+pub struct SpatialAtomMap<const D: usize, U> {
     graph: AtomGraph,
     atom_positions: SecondaryMap<AtomKey, Point<D>>,
     pseudoatom_positions: SecondaryMap<PseudoatomKey, Point<D>>,
+    unit: PhantomData<U>,
 }
 
-impl<const D: usize> SpatialAtomMap<D> {
+impl<const D: usize, U> SpatialAtomMap<D, U> {
     pub fn new() -> Self {
         Self {
             graph: AtomGraph::new(),
             atom_positions: SecondaryMap::new(),
             pseudoatom_positions: SecondaryMap::new(),
+            unit: PhantomData,
         }
     }
 }
 
-impl<const D: usize> CoreGraph for SpatialAtomMap<D> {
+impl<const D: usize, U> CoreGraph for SpatialAtomMap<D, U> {
     type Graph = AtomGraph;
 
     fn graph(&self) -> &Self::Graph {
@@ -52,14 +57,14 @@ impl<const D: usize> CoreGraph for SpatialAtomMap<D> {
     }
 }
 
-impl<const D: usize> Map for SpatialAtomMap<D> {
+impl<const D: usize, U> Map for SpatialAtomMap<D, U> {
     fn contains<E: Entity>(&self, entity: E) -> bool {
         self.graph.contains(entity)
     }
 }
 
-impl<const D: usize> Spatial for SpatialAtomMap<D> {
-    //const DIM: usize = 2;
+impl<const D: usize, U: Unit> Spatial for SpatialAtomMap<D, U> {
+    type Unit = U;
 
     type DimName = na::Const<D>;
 
@@ -69,7 +74,7 @@ impl<const D: usize> Spatial for SpatialAtomMap<D> {
 }
 
 /// Methods for entity addition.
-impl<const D: usize> SpatialAtomMap<D> {
+impl<const D: usize, U: Unit> SpatialAtomMap<D, U> {
     /// Adds an atom to the map at the given position.
     pub fn add_atom(&mut self, element: Element, position: Point<D>) -> Atom {
         let atom = self.graph.add_atom(element);
@@ -142,21 +147,21 @@ impl<const D: usize> SpatialAtomMap<D> {
 // It is not necessary to delete the positions from the SecondaryMap; they will
 // be overwritten.
 
-impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Atom> {
+impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Atom> {
     /// Removes the atom from the map, as well as any bonds to it.
     pub fn delete(self) {
         self.map.graph_mut().delete_atom(self.id);
     }
 }
 
-impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Pseudoatom> {
+impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Pseudoatom> {
     /// Removes the pseudoatom from the map, as well as any bonds to it.
     pub fn delete(self) {
         self.map.graph_mut().delete_pseudoatom(self.id);
     }
 }
 
-impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Bond> {
+impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Bond> {
     /// Removes the bond from the map (but not its bonding partners).
     pub fn delete(self) {
         self.map.graph_mut().delete_bond(self.id);
@@ -164,7 +169,7 @@ impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Bond> {
 }
 
 // Methods for accessing and calculating positions.
-impl<const D: usize> SpatialAtomMap<D> {
+impl<const D: usize, U: Unit> SpatialAtomMap<D, U> {
     /// Returns the position of the given atom or pseudoatom.
     ///
     /// A stale (i.e. invalid) ID may return a position, as spatial data is not
@@ -267,7 +272,7 @@ impl<const D: usize> SpatialAtomMap<D> {
     }
 }
 
-impl<const D: usize> StoresPosition<Atom> for SpatialAtomMap<D> {
+impl<const D: usize, U: Unit> StoresPosition<Atom> for SpatialAtomMap<D, U> {
     fn position(&self, entity: Atom) -> Option<&Point<D>> {
         // When an entity is removed from the map, any spatial data is not deleted.
         // Thus it is possible to obtain a stale position from the SecondaryMap that does
@@ -291,7 +296,7 @@ impl<const D: usize> StoresPosition<Atom> for SpatialAtomMap<D> {
     }
 }
 
-impl<const D: usize> StoresPosition<Pseudoatom> for SpatialAtomMap<D> {
+impl<const D: usize, U: Unit> StoresPosition<Pseudoatom> for SpatialAtomMap<D, U> {
     fn position(&self, entity: Pseudoatom) -> Option<&Point<D>> {
         if self.contains(entity) {
             self.pseudoatom_positions.get(entity.into())
@@ -305,35 +310,35 @@ impl<const D: usize> StoresPosition<Pseudoatom> for SpatialAtomMap<D> {
     }
 }
 
-impl<'m, const D: usize> View<'m, SpatialAtomMap<D>, Atom> {
+impl<'m, const D: usize, U: Unit> View<'m, SpatialAtomMap<D, U>, Atom> {
     /// Returns the position of the atom.
     pub fn position(&self) -> &Point<D> {
         self.map.position(self.id).unwrap()
     }
 }
 
-impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Atom> {
+impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Atom> {
     /// Sets the position of the atom to the provided value.
     pub fn set_position(self, position: Point<D>) {
         self.map.set_position(self.id, position);
     }
 }
 
-impl<'m, const D: usize> View<'m, SpatialAtomMap<D>, Pseudoatom> {
+impl<'m, const D: usize, U: Unit> View<'m, SpatialAtomMap<D, U>, Pseudoatom> {
     /// Returns the position of the pseudoatom.
     pub fn position(&self) -> &Point<D> {
         self.map.position(self.id).unwrap()
     }
 }
 
-impl<'m, const D: usize> ViewMut<'m, SpatialAtomMap<D>, Pseudoatom> {
+impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Pseudoatom> {
     /// Sets the position of the pseudoatom to the provided value.
     pub fn set_position(self, position: Point<D>) {
         self.map.set_position(self.id, position);
     }
 }
 
-impl<'m, const D: usize> View<'m, SpatialAtomMap<D>, Bond> {
+impl<'m, const D: usize, U: Unit> View<'m, SpatialAtomMap<D, U>, Bond> {
     /// Returns the position of the [`Bondable`] from which the bond starts.
     pub fn origin(&self) -> &Point<D> {
         self.map.bond_origin(self.id)
@@ -363,13 +368,16 @@ impl<'m, const D: usize> View<'m, SpatialAtomMap<D>, Bond> {
 #[cfg(test)]
 #[allow(unused)]
 mod tests {
-    use crate::Point2;
+    use crate::{
+        Point2, Point3,
+        units::{Angstrom, Relative},
+    };
 
     use super::*;
 
     #[test]
     fn add_atom() {
-        let mut am: SpatialAtomMap<2> = SpatialAtomMap::new();
+        let mut am: SpatialAtomMap<2, Angstrom> = SpatialAtomMap::new();
         assert_eq!(am.entities::<Atom>().count(), 0);
         let h1 = am.add_atom(Element::H, Point2::new(1.0, 2.0));
         assert_eq!(am.entities::<Atom>().count(), 1);
@@ -384,8 +392,8 @@ mod tests {
 
     #[test]
     fn delete_atom() {
-        let mut am: SpatialAtomMap<2> = SpatialAtomMap::new();
-        let h1 = am.add_atom(Element::H, Point2::new(1.0, 2.0));
+        let mut am: SpatialAtomMap<3, Relative> = SpatialAtomMap::new();
+        let h1 = am.add_atom(Element::H, Point3::new(1.0, 2.0, 3.0));
         assert_eq!(am.entities::<Atom>().count(), 1);
         assert_eq!(am.atom_positions.len(), 1);
         am.view_mut(h1).unwrap().delete();

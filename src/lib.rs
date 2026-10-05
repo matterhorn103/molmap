@@ -30,6 +30,7 @@ pub mod molecular;
 pub mod parse;
 //pub mod reaction;
 pub mod geometry;
+pub mod units;
 pub mod view;
 
 // Top-level items

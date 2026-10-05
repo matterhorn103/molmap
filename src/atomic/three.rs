@@ -6,7 +6,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use crate::units::Angstrom;
+
 use super::spatial::SpatialAtomMap;
 
 /// A map holding only fundamental entities and their two-dimensional positions.
-pub type AtomMap3 = SpatialAtomMap<3>;
+pub type AtomMap3 = SpatialAtomMap<3, Angstrom>;
