@@ -29,6 +29,7 @@ pub mod graph;
 pub mod molecular;
 pub mod parse;
 //pub mod reaction;
+pub mod geometry;
 pub mod view;
 
 // Top-level items
@@ -43,5 +44,5 @@ pub use traits::{Map, Spatial, ThreeDimensional, TwoDimensional};
 // ------------------
 // Foreign crates or things from them
 // Re-exporting nalgebra makes it easier for others to use
+pub use geometry::{Point, Point2, Point3, Vector, Vector2, Vector3};
 pub use nalgebra;
-pub use nalgebra::{Point2, Point3, Vector2, Vector3};

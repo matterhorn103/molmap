@@ -16,11 +16,14 @@ use slotmap::SlotMap;
 use crate::{
     entities::{Entities, Entity, Kind, Selection},
     error::*,
+    geometry::*,
     view::*,
 };
 
 /// Traits that must remain unnameable from outside the crate.
 mod internal {
+    use nalgebra::OPoint;
+
     use crate::entities::Stored;
 
     use super::*;
@@ -256,12 +259,13 @@ pub trait Map: CoreGraph + Sized {
 }
 
 pub trait Spatial {
-    const DIM: usize;
+    /// The dimensionality of the map, as a type.
+    type DimName: na::DimName;
 
-    type Dim: na::DimName;
+    ///// The dimensionality of the map, as an integer.
+    //const DIM: usize = <Self::DimName as na::DimName>::DIM;
 
-    type Scalar: na::Scalar;
-
+    /// The type of a position in the map.
     type Point: Copy
         + Clone
         + PartialEq
@@ -271,25 +275,20 @@ pub trait Spatial {
         + std::ops::Add<Self::Vector, Output = Self::Point>
         + std::ops::Sub<Self::Point, Output = Self::Vector>;
 
+    /// The type of a vector in the map.
     type Vector: Copy
         + Clone
         + PartialEq
         + PartialOrd
         + std::fmt::Debug
-        + Default
         + std::ops::Add<Output = Self::Vector>
         + std::ops::Sub<Output = Self::Vector>
-        + std::ops::Mul<Self::Scalar, Output = Self::Vector>
-        + std::ops::Div<Self::Scalar, Output = Self::Vector>
-        + std::ops::Neg<Output = Self::Vector>;
+        + std::ops::Mul<f64, Output = Self::Vector>
+        + std::ops::Div<f64, Output = Self::Vector>
+        + std::ops::Neg<Output = Self::Vector>
+        + num_traits::Zero;
 }
 
-pub trait TwoDimensional:
-    Spatial<Dim = na::U2, Scalar = f64, Point = na::Point2<f64>, Vector = na::Vector2<f64>>
-{
-}
+pub trait TwoDimensional: Spatial<DimName = na::U2, Point = Point2, Vector = Vector2> {}
 
-pub trait ThreeDimensional:
-    Spatial<Dim = na::U3, Scalar = f64, Point = na::Point3<f64>, Vector = na::Vector3<f64>>
-{
-}
+pub trait ThreeDimensional: Spatial<DimName = na::U3, Point = Point3, Vector = Vector3> {}
