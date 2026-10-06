@@ -1,5 +1,5 @@
 use molmap::{
-    atomic::{AtomMap0, AtomMap2, AtomMap3},
+    atomic::{AtomMap0, AtomMap2},
     entities::{Atom, Selection::All},
     *,
 };

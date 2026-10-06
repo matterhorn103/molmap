@@ -10,15 +10,9 @@
 
 use slotmap::SlotMap;
 
-use super::entities::*;
+use crate::{atomic::AtomGraph, entities::*, traits::Stores};
 
-use crate::{
-    Element, Pseudoelement,
-    atomic::AtomGraph,
-    entities::*,
-    error::{MolMapError, MolMapResult},
-    traits::Stores,
-};
+use super::entities::*;
 
 /// An arena-like data structure to represent a set of chemical entities,
 /// their properties, and the relationships between them, as a molecular graph.
@@ -75,6 +69,7 @@ impl_stores!(Molecule, molecules);
 /// Constructor methods.
 impl MolGraph {
     /// Creates a new, empty `MolGraph`.
+    #[expect(dead_code)]
     pub(crate) fn new() -> Self {
         Self {
             inner: AtomGraph::new(),
@@ -84,6 +79,7 @@ impl MolGraph {
     }
 
     /// Creates a new `MolGraph` with the specified capacities for each kind of entity.
+    #[expect(dead_code)]
     pub(crate) fn with_capacities(
         atoms: usize,
         pseudoatoms: usize,

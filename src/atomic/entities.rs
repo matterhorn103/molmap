@@ -60,13 +60,7 @@
 //! core structs e.g. [`BondType`] and [`SubstituentCentre`], but these may well
 //! be moved in the future.
 
-use crate::{
-    Element, Pseudoelement,
-    atomic::{AtomGraph, AtomMap},
-    entities::*,
-    traits::Stores,
-    view::View,
-};
+use crate::{Element, Pseudoelement, View, entities::*, traits::Stores};
 
 /// The core data of an atom entity.
 #[derive(Clone, Debug)]

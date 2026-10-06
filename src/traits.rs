@@ -14,19 +14,12 @@ use nalgebra as na;
 use slotmap::SlotMap;
 
 use crate::{
-    entities::{Entities, Entity, Kind, Selection},
-    error::*,
-    geometry::*,
-    units::Unit,
-    view::*,
+    Point2, Point3, Vector2, Vector3, View, ViewMut, Views, entities::*, error::*, units::Unit,
 };
 
 /// Traits that must remain unnameable from outside the crate.
+#[allow(unreachable_pub)]
 mod internal {
-    use nalgebra::OPoint;
-
-    use crate::entities::Stored;
-
     use super::*;
 
     /// Implemented by graphs and maps to indicate that they store the specific
@@ -174,12 +167,9 @@ pub trait Map: CoreGraph + Sized {
 
     /// Checks if the map currently contains the given entity.
     ///
-    /// This method is flexible and able to do the check for any [`Entity`] type,
+    /// This method must be flexible and able to do the check for any [`Entity`] type,
     /// not just ones actually in the map, and including category types.
     fn contains<E: Entity>(&self, entity: E) -> bool;
-    //{
-    //self.graph().contains(entity)
-    //}
 
     /// Returns an iterator over all of a given kind of entity in the map.
     fn entities<E>(&'_ self) -> Entities<'_, E>

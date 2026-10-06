@@ -6,9 +6,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{Map, entities::*, molecular::MolGraph, traits::Stores};
+use crate::Map;
 
-use super::{AtomGraph, entities::*};
+use super::AtomGraph;
 
 /// A map holding only fundamental entities.
 pub trait AtomMap: Map<Graph = AtomGraph> {}

@@ -7,13 +7,12 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use crate::{
-    atomic::{AtomMap, graph::AtomGraph},
+    BondType, Element, Map, MolMapError, MolMapResult, Pseudoelement, ViewMut,
     entities::*,
-    error::*,
     traits::{CoreGraph, Graph, Stores},
-    view::*,
-    *,
 };
+
+use super::{AtomGraph, AtomMap};
 
 /// A map holding only fundamental entities in a pure-graph representation.
 #[derive(Clone, Debug, Default)]
@@ -26,6 +25,10 @@ impl AtomMap0 {
         Self {
             graph: AtomGraph::new(),
         }
+    }
+
+    pub fn contains<E: Entity>(&self, entity: E) -> bool {
+        self.graph.contains(entity)
     }
 }
 
@@ -43,7 +46,7 @@ impl CoreGraph for AtomMap0 {
 
 impl Map for AtomMap0 {
     fn contains<E: Entity>(&self, entity: E) -> bool {
-        self.graph.contains(entity)
+        self.contains(entity)
     }
 }
 

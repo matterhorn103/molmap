@@ -13,17 +13,16 @@ use std::marker::PhantomData;
 use nalgebra as na;
 use slotmap::SecondaryMap;
 
-use super::AtomGraph;
-
 use crate::{
-    BondType, Element, Pseudoelement,
+    BondType, Element, Map, MolMapError, MolMapResult, Point, Pseudoelement, Spatial, Vector, View,
+    ViewMut,
     entities::*,
-    error::*,
-    geometry::{self, Point, Vector},
-    traits::*,
+    geometry,
+    traits::{CoreGraph, Graph, Stores, StoresPosition},
     units::Unit,
-    view::*,
 };
+
+use super::AtomGraph;
 
 /// A map holding only fundamental entities and their positions in `D`-dimensional space.
 #[derive(Clone, Debug, Default)]
@@ -43,6 +42,10 @@ impl<const D: usize, U> SpatialAtomMap<D, U> {
             unit: PhantomData,
         }
     }
+
+    pub fn contains<E: Entity>(&self, entity: E) -> bool {
+        self.graph.contains(entity)
+    }
 }
 
 impl<const D: usize, U> CoreGraph for SpatialAtomMap<D, U> {
@@ -59,7 +62,7 @@ impl<const D: usize, U> CoreGraph for SpatialAtomMap<D, U> {
 
 impl<const D: usize, U> Map for SpatialAtomMap<D, U> {
     fn contains<E: Entity>(&self, entity: E) -> bool {
-        self.graph.contains(entity)
+        self.contains(entity)
     }
 }
 

@@ -10,7 +10,7 @@ use std::iter::FusedIterator;
 
 use slotmap::basic::Keys;
 
-use crate::error::*;
+use crate::{MolMapError, MolMapResult};
 
 mod id;
 use id::Id;
@@ -253,10 +253,9 @@ where
 
 /// Items that must remain unnameable from outside the crate.
 mod internal {
-    use crate::traits::Stores;
+    use slotmap::new_key_type;
 
     use super::*;
-    use slotmap::new_key_type;
 
     /// A kind of entity whose ID is a key in a backing `SlotMap`.
     pub trait Keyed: Entity {

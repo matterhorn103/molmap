@@ -10,13 +10,13 @@
 
 use slotmap::SlotMap;
 
-use super::entities::*;
-
 use crate::{
     Element, Pseudoelement,
     entities::*,
     traits::{Graph, Stores},
 };
+
+use super::entities::*;
 
 /// The internal core of an [`AtomMap`] type.
 #[derive(Clone, Debug, Default)]
@@ -74,6 +74,7 @@ impl AtomGraph {
     }
 
     /// Creates a new `AtomGraph` with the specified capacities for each kind of entity.
+    #[expect(dead_code)]
     pub(crate) fn with_capacities(atoms: usize, pseudoatoms: usize, bonds: usize) -> Self {
         Self {
             atoms: SlotMap::with_capacity_and_key(atoms),
