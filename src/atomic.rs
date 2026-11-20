@@ -16,7 +16,7 @@ mod spatial;
 // Crate-internal API
 // ------------------
 pub(crate) mod data;
-pub(crate) use spatial::SpatialAtomicCommon;
+pub(crate) use spatial::AtomicPositions;
 
 // ----------
 // Public API

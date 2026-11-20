@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 use slotmap::SecondaryMap;
 
 use crate::{
-    atomic::{AtomMap, Atomic, SpatialAtomicCommon},
+    atomic::{AtomMap, Atomic, AtomicPositions},
     entities::*,
     error::Error,
     geometry::{Point, Vector},
@@ -28,7 +28,7 @@ use super::{MolMap, Molecular, data::SubstituentCentre};
 /// This trait and its methods should remain internal -- see [`SpatialAtomicCommon`]
 /// for further explanation.
 pub(crate) trait SpatialMolecularCommon<const D: usize>:
-    Spatial<D> + SpatialAtomicCommon<D> + Molecular
+    Spatial<D> + AtomicPositions<D> + Molecular
 {
     /// Calculates the unweighted geometric centre of the substituent.
     ///
@@ -152,7 +152,7 @@ impl<const D: usize, U: Unit> Spatial<D> for SpatialMolMap<D, U> {
     type Unit = U;
 }
 
-impl<const D: usize, U: Unit> SpatialAtomicCommon<D> for SpatialMolMap<D, U> {
+impl<const D: usize, U: Unit> AtomicPositions<D> for SpatialMolMap<D, U> {
     fn atom_position(&self, atom: Atom) -> Option<&Point<D>> {
         // When an entity is removed from the map, any spatial data is not deleted.
         // If the slot has not since been overwritten, it is possible to obtain a stale
