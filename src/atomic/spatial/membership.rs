@@ -6,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{entities::*, traits::Map, units::Unit, view::ViewMut};
+use crate::{entities::*, units::Unit, view::ViewMut};
 
 use super::SpatialAtomMap;
 
@@ -56,7 +56,7 @@ impl<'m, const D: usize, U: Unit> ViewMut<'m, SpatialAtomMap<D, U>, Bond> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{elements::Element, geometry::Point3, units::Relative};
+    use crate::{elements::Element, geometry::Point3, traits::Map, units::Relative};
 
     use super::*;
 

@@ -11,7 +11,7 @@ use crate::{
     elements::{Element, Pseudoelement},
     entities::*,
     error::Error,
-    traits::{Map, Stores},
+    traits::Stores,
 };
 
 use super::*;

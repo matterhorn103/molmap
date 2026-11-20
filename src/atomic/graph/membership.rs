@@ -8,7 +8,7 @@
 
 use crate::{
     entities::*,
-    traits::{Map, Stores, StoresMut},
+    traits::{Stores, StoresMut},
     view::ViewMut,
 };
 
@@ -111,6 +111,24 @@ impl<'m> ViewMut<'m, AtomMap, Bond> {
     /// Removes the bond from the map (but not its bonding partners).
     pub fn delete(self) {
         self.map.delete_bond(self.id);
+    }
+}
+
+/// Methods to query or ascertain membership.
+impl AtomMap {
+    pub fn contains<E: Entity>(&self, entity: E) -> bool {
+        match entity.to_resolved() {
+            ResolvedEntity::Atom(atom) => {
+                <AtomMap as Stores<Atom>>::slotmap(self).contains_key(atom.to_key())
+            }
+            ResolvedEntity::Bond(bond) => {
+                <AtomMap as Stores<Bond>>::slotmap(self).contains_key(bond.to_key())
+            }
+            ResolvedEntity::Pseudoatom(pseudoatom) => {
+                <AtomMap as Stores<Pseudoatom>>::slotmap(self).contains_key(pseudoatom.to_key())
+            }
+            _ => false,
+        }
     }
 }
 
